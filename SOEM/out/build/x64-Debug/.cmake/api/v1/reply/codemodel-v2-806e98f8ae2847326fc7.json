@@ -1,0 +1,163 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "test/simple_ng",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test/simple_ng",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "test/linux/slaveinfo",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test/linux/slaveinfo",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "test/linux/eepromtool",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test/linux/eepromtool",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "test/linux/simple_test",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test/linux/simple_test",
+					"targetIndexes" : 
+					[
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					],
+					"name" : "SOEM",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 3,
+					"id" : "eepromtool::@1a405a2744c8a4f494c9",
+					"jsonFile" : "target-eepromtool-Debug-c3eb781cb9b4e5c59996.json",
+					"name" : "eepromtool",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "simple_ng::@c85193c515561b6ed8b7",
+					"jsonFile" : "target-simple_ng-Debug-11a724f47abf2330eccc.json",
+					"name" : "simple_ng",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "simple_test::@191e0dc8f4df75f9d790",
+					"jsonFile" : "target-simple_test-Debug-8cf60ad321f3e7b8eaf2.json",
+					"name" : "simple_test",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "slaveinfo::@3451288a7b55caeda638",
+					"jsonFile" : "target-slaveinfo-Debug-bf72faf3488475bc2fcf.json",
+					"name" : "slaveinfo",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "soem::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-soem-Debug-24b4676fb1090f5dcd9c.json",
+					"name" : "soem",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/out/build/x64-Debug",
+		"source" : "E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 2
+	}
+}
