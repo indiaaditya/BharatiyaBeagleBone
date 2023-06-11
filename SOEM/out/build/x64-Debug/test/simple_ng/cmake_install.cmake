@@ -1,8 +1,8 @@
-# Install script for directory: E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/test/simple_ng
+# Install script for directory: E:/Proff/Clients/BharatiyaBeaglebone/SOEM/test/simple_ng
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/out/install/x64-Debug")
+  set(CMAKE_INSTALL_PREFIX "E:/Proff/Clients/BharatiyaBeaglebone/SOEM/out/install/x64-Debug")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -33,6 +33,6 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES "E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/out/build/x64-Debug/test/simple_ng/simple_ng.exe")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES "E:/Proff/Clients/BharatiyaBeaglebone/SOEM/out/build/x64-Debug/test/simple_ng/simple_ng.exe")
 endif()
 

@@ -162,7 +162,7 @@ build soem.lib: C_STATIC_LIBRARY_LINKER__soem_Debug CMakeFiles\soem.dir\soem\eth
 # Utility command for install/local
 
 build CMakeFiles\install\local.util: CUSTOM_COMMAND all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -174,7 +174,7 @@ build install\local: phony CMakeFiles\install\local.util
 # Utility command for install
 
 build CMakeFiles\install.util: CUSTOM_COMMAND all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
@@ -186,7 +186,7 @@ build install: phony CMakeFiles\install.util
 # Utility command for edit_cache
 
 build CMakeFiles\edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -197,7 +197,7 @@ build edit_cache: phony CMakeFiles\edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles\rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM -BE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaBeaglebone\SOEM -BE:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -212,7 +212,7 @@ build list_install_components: phony
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/CMakeLists.txt
+# E:/Proff/Clients/BharatiyaBeaglebone/SOEM/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -244,7 +244,7 @@ build test\simple_ng\simple_ng.exe: C_EXECUTABLE_LINKER__simple_ng_Debug test\si
   FLAGS = /DWIN32 /D_WINDOWS /W3 /D _CRT_SECURE_NO_WARNINGS  /WX /MDd /Zi /Ob0 /Od /RTC1
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL /subsystem:console
   LINK_LIBRARIES = soem.lib  wpcap.lib  Packet.lib  Ws2_32.lib  Winmm.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
-  LINK_PATH = -LIBPATH:E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\oshw\win32\wpcap\Lib\x64
+  LINK_PATH = -LIBPATH:E:\Proff\Clients\BharatiyaBeaglebone\SOEM\oshw\win32\wpcap\Lib\x64
   OBJECT_DIR = test\simple_ng\CMakeFiles\simple_ng.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -258,7 +258,7 @@ build test\simple_ng\simple_ng.exe: C_EXECUTABLE_LINKER__simple_ng_Debug test\si
 # Utility command for install/local
 
 build test\simple_ng\CMakeFiles\install\local.util: CUSTOM_COMMAND test\simple_ng\all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\simple_ng && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\simple_ng && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -270,7 +270,7 @@ build test\simple_ng\install\local: phony test\simple_ng\CMakeFiles\install\loca
 # Utility command for install
 
 build test\simple_ng\CMakeFiles\install.util: CUSTOM_COMMAND test\simple_ng\all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\simple_ng && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\simple_ng && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
@@ -282,7 +282,7 @@ build test\simple_ng\install: phony test\simple_ng\CMakeFiles\install.util
 # Utility command for edit_cache
 
 build test\simple_ng\CMakeFiles\edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\simple_ng && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\simple_ng && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -293,7 +293,7 @@ build test\simple_ng\edit_cache: phony test\simple_ng\CMakeFiles\edit_cache.util
 # Utility command for rebuild_cache
 
 build test\simple_ng\CMakeFiles\rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\simple_ng && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM -BE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\simple_ng && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaBeaglebone\SOEM -BE:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -308,7 +308,7 @@ build test\simple_ng\list_install_components: phony
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/CMakeLists.txt
+# E:/Proff/Clients/BharatiyaBeaglebone/SOEM/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -340,7 +340,7 @@ build test\linux\slaveinfo\slaveinfo.exe: C_EXECUTABLE_LINKER__slaveinfo_Debug t
   FLAGS = /DWIN32 /D_WINDOWS /W3 /D _CRT_SECURE_NO_WARNINGS  /WX /MDd /Zi /Ob0 /Od /RTC1
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL /subsystem:console
   LINK_LIBRARIES = soem.lib  wpcap.lib  Packet.lib  Ws2_32.lib  Winmm.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
-  LINK_PATH = -LIBPATH:E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\oshw\win32\wpcap\Lib\x64
+  LINK_PATH = -LIBPATH:E:\Proff\Clients\BharatiyaBeaglebone\SOEM\oshw\win32\wpcap\Lib\x64
   OBJECT_DIR = test\linux\slaveinfo\CMakeFiles\slaveinfo.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -354,7 +354,7 @@ build test\linux\slaveinfo\slaveinfo.exe: C_EXECUTABLE_LINKER__slaveinfo_Debug t
 # Utility command for install/local
 
 build test\linux\slaveinfo\CMakeFiles\install\local.util: CUSTOM_COMMAND test\linux\slaveinfo\all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\slaveinfo && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\slaveinfo && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -366,7 +366,7 @@ build test\linux\slaveinfo\install\local: phony test\linux\slaveinfo\CMakeFiles\
 # Utility command for install
 
 build test\linux\slaveinfo\CMakeFiles\install.util: CUSTOM_COMMAND test\linux\slaveinfo\all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\slaveinfo && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\slaveinfo && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
@@ -378,7 +378,7 @@ build test\linux\slaveinfo\install: phony test\linux\slaveinfo\CMakeFiles\instal
 # Utility command for edit_cache
 
 build test\linux\slaveinfo\CMakeFiles\edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\slaveinfo && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\slaveinfo && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -389,7 +389,7 @@ build test\linux\slaveinfo\edit_cache: phony test\linux\slaveinfo\CMakeFiles\edi
 # Utility command for rebuild_cache
 
 build test\linux\slaveinfo\CMakeFiles\rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\slaveinfo && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM -BE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\slaveinfo && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaBeaglebone\SOEM -BE:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -404,7 +404,7 @@ build test\linux\slaveinfo\list_install_components: phony
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/CMakeLists.txt
+# E:/Proff/Clients/BharatiyaBeaglebone/SOEM/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -436,7 +436,7 @@ build test\linux\eepromtool\eepromtool.exe: C_EXECUTABLE_LINKER__eepromtool_Debu
   FLAGS = /DWIN32 /D_WINDOWS /W3 /D _CRT_SECURE_NO_WARNINGS  /WX /MDd /Zi /Ob0 /Od /RTC1
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL /subsystem:console
   LINK_LIBRARIES = soem.lib  wpcap.lib  Packet.lib  Ws2_32.lib  Winmm.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
-  LINK_PATH = -LIBPATH:E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\oshw\win32\wpcap\Lib\x64
+  LINK_PATH = -LIBPATH:E:\Proff\Clients\BharatiyaBeaglebone\SOEM\oshw\win32\wpcap\Lib\x64
   OBJECT_DIR = test\linux\eepromtool\CMakeFiles\eepromtool.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -450,7 +450,7 @@ build test\linux\eepromtool\eepromtool.exe: C_EXECUTABLE_LINKER__eepromtool_Debu
 # Utility command for install/local
 
 build test\linux\eepromtool\CMakeFiles\install\local.util: CUSTOM_COMMAND test\linux\eepromtool\all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\eepromtool && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\eepromtool && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -462,7 +462,7 @@ build test\linux\eepromtool\install\local: phony test\linux\eepromtool\CMakeFile
 # Utility command for install
 
 build test\linux\eepromtool\CMakeFiles\install.util: CUSTOM_COMMAND test\linux\eepromtool\all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\eepromtool && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\eepromtool && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
@@ -474,7 +474,7 @@ build test\linux\eepromtool\install: phony test\linux\eepromtool\CMakeFiles\inst
 # Utility command for edit_cache
 
 build test\linux\eepromtool\CMakeFiles\edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\eepromtool && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\eepromtool && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -485,7 +485,7 @@ build test\linux\eepromtool\edit_cache: phony test\linux\eepromtool\CMakeFiles\e
 # Utility command for rebuild_cache
 
 build test\linux\eepromtool\CMakeFiles\rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\eepromtool && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM -BE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\eepromtool && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaBeaglebone\SOEM -BE:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -500,7 +500,7 @@ build test\linux\eepromtool\list_install_components: phony
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
-# E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/CMakeLists.txt
+# E:/Proff/Clients/BharatiyaBeaglebone/SOEM/CMakeLists.txt
 # =============================================================================
 
 # =============================================================================
@@ -532,7 +532,7 @@ build test\linux\simple_test\simple_test.exe: C_EXECUTABLE_LINKER__simple_test_D
   FLAGS = /DWIN32 /D_WINDOWS /W3 /D _CRT_SECURE_NO_WARNINGS  /WX /MDd /Zi /Ob0 /Od /RTC1
   LINK_FLAGS = /machine:x64 /debug /INCREMENTAL /subsystem:console
   LINK_LIBRARIES = soem.lib  wpcap.lib  Packet.lib  Ws2_32.lib  Winmm.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
-  LINK_PATH = -LIBPATH:E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\oshw\win32\wpcap\Lib\x64
+  LINK_PATH = -LIBPATH:E:\Proff\Clients\BharatiyaBeaglebone\SOEM\oshw\win32\wpcap\Lib\x64
   OBJECT_DIR = test\linux\simple_test\CMakeFiles\simple_test.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
@@ -546,7 +546,7 @@ build test\linux\simple_test\simple_test.exe: C_EXECUTABLE_LINKER__simple_test_D
 # Utility command for install/local
 
 build test\linux\simple_test\CMakeFiles\install\local.util: CUSTOM_COMMAND test\linux\simple_test\all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\simple_test && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\simple_test && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake"
   DESC = Installing only the local directory...
   pool = console
   restat = 1
@@ -558,7 +558,7 @@ build test\linux\simple_test\install\local: phony test\linux\simple_test\CMakeFi
 # Utility command for install
 
 build test\linux\simple_test\CMakeFiles\install.util: CUSTOM_COMMAND test\linux\simple_test\all
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\simple_test && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\simple_test && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -P cmake_install.cmake"
   DESC = Install the project...
   pool = console
   restat = 1
@@ -570,7 +570,7 @@ build test\linux\simple_test\install: phony test\linux\simple_test\CMakeFiles\in
 # Utility command for edit_cache
 
 build test\linux\simple_test\CMakeFiles\edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\simple_test && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\simple_test && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -581,7 +581,7 @@ build test\linux\simple_test\edit_cache: phony test\linux\simple_test\CMakeFiles
 # Utility command for rebuild_cache
 
 build test\linux\simple_test\CMakeFiles\rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug\test\linux\simple_test && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM -BE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug"
+  COMMAND = cmd.exe /C "cd /D E:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug\test\linux\simple_test && "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaBeaglebone\SOEM -BE:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -621,35 +621,35 @@ build soem: phony soem.lib
 # =============================================================================
 
 #############################################
-# Folder: E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/out/build/x64-Debug
+# Folder: E:/Proff/Clients/BharatiyaBeaglebone/SOEM/out/build/x64-Debug
 
 build all: phony soem.lib test\simple_ng\all test\linux\slaveinfo\all test\linux\eepromtool\all test\linux\simple_test\all
 
 # =============================================================================
 
 #############################################
-# Folder: E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/out/build/x64-Debug/test/linux/eepromtool
+# Folder: E:/Proff/Clients/BharatiyaBeaglebone/SOEM/out/build/x64-Debug/test/linux/eepromtool
 
 build test\linux\eepromtool\all: phony test\linux\eepromtool\eepromtool.exe
 
 # =============================================================================
 
 #############################################
-# Folder: E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/out/build/x64-Debug/test/linux/simple_test
+# Folder: E:/Proff/Clients/BharatiyaBeaglebone/SOEM/out/build/x64-Debug/test/linux/simple_test
 
 build test\linux\simple_test\all: phony test\linux\simple_test\simple_test.exe
 
 # =============================================================================
 
 #############################################
-# Folder: E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/out/build/x64-Debug/test/linux/slaveinfo
+# Folder: E:/Proff/Clients/BharatiyaBeaglebone/SOEM/out/build/x64-Debug/test/linux/slaveinfo
 
 build test\linux\slaveinfo\all: phony test\linux\slaveinfo\slaveinfo.exe
 
 # =============================================================================
 
 #############################################
-# Folder: E:/Proff/Clients/BharatiyaValves/Ethercat/SOEM/out/build/x64-Debug/test/simple_ng
+# Folder: E:/Proff/Clients/BharatiyaBeaglebone/SOEM/out/build/x64-Debug/test/simple_ng
 
 build test\simple_ng\all: phony test\simple_ng\simple_ng.exe
 

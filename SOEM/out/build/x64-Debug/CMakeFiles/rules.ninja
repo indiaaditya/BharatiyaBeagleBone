@@ -119,7 +119,7 @@ rule C_EXECUTABLE_LINKER__simple_test_Debug
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM -BE:\Proff\Clients\BharatiyaValves\Ethercat\SOEM\out\build\x64-Debug
+  command = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" --regenerate-during-build -SE:\Proff\Clients\BharatiyaBeaglebone\SOEM -BE:\Proff\Clients\BharatiyaBeaglebone\SOEM\out\build\x64-Debug
   description = Re-running CMake...
   generator = 1
 

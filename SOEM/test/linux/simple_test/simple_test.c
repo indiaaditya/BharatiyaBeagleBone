@@ -13,19 +13,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
+//#include <winsock2.h>
+//#include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include "ethercat.h"
 #include <math.h>
-#pragma comment(lib,"ws2_32.lib") //Winsock Library
+//#pragma comment(lib,"ws2_32.lib") //Winsock Library
 
-
+/*
 #ifdef _WIN32
 #include <Windows.h>
 #endif
-
+*/
 #define EC_TIMEOUTMON 500
 
 #define DEFAULT_BUFLEN 512
@@ -1549,7 +1549,7 @@ void SetActualTqAndPosn()
     printf("\nActPosn: %d, ACT_TQ:%d, DesStat: %d", uiActualPosn, uiActualTq, uiDesiredStatus);
     sprintf(stringToTx, "STP,%d,%d,%d", uiActualPosn, uiActualTq, uiDesiredStatus);
     printf("\n Calling fn SocketSendResponse...");
-    SocketSendResponse(stringToTx);
+    //SocketSendResponse(stringToTx);
 }
 
 void SetCommandStatus(UINT32 uirCmdStatus)
@@ -2188,7 +2188,7 @@ OSAL_THREAD_FUNC ecatcheck(void* ptr)
     }
 }
 
-
+/*
 void socketServerAction() {
     INT8 bLclTryAgain = FALSE;
 
@@ -2371,7 +2371,9 @@ void socketServerAction() {
     }
 
 }
+*/
 
+/*
 void SocketSendResponse(char* strDataToSend) {
     printf("Str to send: %s", strDataToSend);
     int len = (int)(strlen(strDataToSend));
@@ -2391,7 +2393,7 @@ void SocketSendResponse(char* strDataToSend) {
 
     }
 }
-
+*/
 
 int main(int argc, char* argv[])
 {
