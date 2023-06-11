@@ -365,11 +365,11 @@ uint16 setLimitingTorqueValue(float frDesiredTorque, float frMotorMaxTorque, uin
 void updateStatus(uint16 uirStatus);
 void printStatus(uint16 uirDriveStat);
 void modifyControlWord(/*uint16 uirSlave,*/ uint16 uirDesiredStat/*, uint8 uiOffset*/);
-void setProfilePositionParameters(uint16 uirSlave, int32 irTargetPosn, uint32 uirProfileVelocity, uint32 uirProfileAcceleration, uint32 uirProfileDeceleration);
-void modifyInterpolatedPositionCommandValue(int32 irDesiredPosn, float frMaxTq, int32 irTargetVel);
+//void setProfilePositionParameters(uint16 uirSlave, int32 irTargetPosn, uint32 uirProfileVelocity, uint32 uirProfileAcceleration, uint32 uirProfileDeceleration);
+//void modifyInterpolatedPositionCommandValue(int32 irDesiredPosn, float frMaxTq, int32 irTargetVel);
 void modifyLatchControlWordValue(uint16 uirLatchCtlWd, uint8 uirOffset);
 void modifyTorqueFeedForwardValue(uint16 uirTqFeedFwd/*, uint8 uirOffset*/);
-void modifyDigitalOutputValue(uint16 uirDigitalOp, uint8 uirOffset);
+//void modifyDigitalOutputValue(uint16 uirDigitalOp, uint8 uirOffset);
 void modifyMaxTorqueValue(uint16 uirMaxTorque, uint8 uirOffset);
 void modifyMaxTorqueValueRegister(uint16 uirSlave, uint16 uirMaxTorque);
 void DriveEnable();
@@ -392,7 +392,7 @@ void StoreFloat(FILE* fp, float floatToStore);
 UINT32 ValidateInteger(UINT32* uirIntegerToValidate, UINT32 uirIntegerMinVal, UINT32 uirIntegerMaxVal, UINT32 uirFillValIfInvalid);
 UINT32 ValidateFloat(float* frFloatToValidate, float frFloatMinVal, float frFloatMaxVal, float frFillValIfInvalid);
 void SetActualTqAndPosn();
-void SetCommandStatus(UINT32 uirCmdStatus);
+//void SetCommandStatus(UINT32 uirCmdStatus);
 void ConvertDegreeOfRotationToCount(uint32 uirRPM, uint32 uirScanIntervalInMsec, uint32 uirDegreesToRotate);
 void socketServerAction();
 char** str_split(char* a_str, const char a_delim);
@@ -888,6 +888,8 @@ void setSoftwarePositionLimit(uint16 uirSlave, int32 irSW_PosnLimit1, int32 irSW
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_SW_POSN_LIMIT, 0x00, FALSE, sizeof(uiLclint8), &uiLclint8, EC_TIMEOUTRXM);
 }
 
+
+/*
 void setProfilePositionParameters(uint16 uirSlave, int32 irTargetPosn,uint32 uirProfileVelocity, uint32 uirProfileAcceleration, uint32 uirProfileDeceleration)
 {
     uint32 uilclRetval;
@@ -897,7 +899,9 @@ void setProfilePositionParameters(uint16 uirSlave, int32 irTargetPosn,uint32 uir
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_ACCELERATION, 0x00, FALSE, sizeof(uirProfileAcceleration), &uirProfileAcceleration, EC_TIMEOUTRXM);
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_DECELRATION, 0x00, FALSE, sizeof(uirProfileDeceleration), &uirProfileDeceleration, EC_TIMEOUTRXM);
 }
+*/
 
+/*
 void modifyInterpolatedPositionCommandValue(int32 irDesiredPosn, float frMaxTq, int32 irTargetVel)
 {
 
@@ -914,15 +918,15 @@ void modifyInterpolatedPositionCommandValue(int32 irDesiredPosn, float frMaxTq, 
     }iSplitVar;
 
 
-    /*
-        uiInterPolTimeInSec = (uint8) uirInterpolationTimeInSec;
-        uiInterPolTimeInSec = 12;
-        iInterPolTimeIndex = 1;
+    
+        //uiInterPolTimeInSec = (uint8) uirInterpolationTimeInSec;
+        //uiInterPolTimeInSec = 12;
+        //iInterPolTimeIndex = 1;
 
-        retval += ec_SDOwrite(slave, 0x60C2, 0x01, FALSE, sizeof(uiInterPolTimeInSec), &uiInterPolTimeInSec, EC_TIMEOUTRXM);	//Interpolated Time is set
-        retval += ec_SDOwrite(slave, 0x60C2, 0x02, FALSE, sizeof(iInterPolTimeIndex), &iInterPolTimeIndex, EC_TIMEOUTRXM);	//Interpolated Time is set
-        printf("\n\n\n\n\n\n\n\n\n\n Function CALLLED!!!!!\n\n\n\n\n");
-        */
+        //retval += ec_SDOwrite(slave, 0x60C2, 0x01, FALSE, sizeof(uiInterPolTimeInSec), &uiInterPolTimeInSec, EC_TIMEOUTRXM);	//Interpolated Time is set
+        //retval += ec_SDOwrite(slave, 0x60C2, 0x02, FALSE, sizeof(iInterPolTimeIndex), &iInterPolTimeIndex, EC_TIMEOUTRXM);	//Interpolated Time is set
+        //printf("\n\n\n\n\n\n\n\n\n\n Function CALLLED!!!!!\n\n\n\n\n");
+        
     uiCyclesCntr++;
     //printf("\n\n\n\n**********************************************************************MIPCV CALLED*****************************: %d\n\n\n\n\n", uiCyclesCntr);
     //printf("\tIP");
@@ -937,7 +941,7 @@ void modifyInterpolatedPositionCommandValue(int32 irDesiredPosn, float frMaxTq, 
     *(ec_slave[0].outputs + OUTPUT_OFFSET_MAX_TQ) = iSplitVar.split.ll;
     *(ec_slave[0].outputs + (OUTPUT_OFFSET_MAX_TQ + 1)) = iSplitVar.split.lh;
 }
-
+*/
 void modifyLatchControlWordValue(uint16 uirLatchCtlWd, uint8 uirOffset)
 {
     union {
@@ -970,7 +974,7 @@ void modifyTorqueFeedForwardValue(uint16 uirTqFeedFwd/*, uint8 uirOffset*/)
     *(ec_slave[0].outputs + OUTPUT_OFFSET_TARGET_TQ + 1) = uiSplitVar.split.h;
 }
 
-void modifyDigitalOutputValue(uint16 uirDigitalOp, uint8 uirOffset)
+/*void modifyDigitalOutputValue(uint16 uirDigitalOp, uint8 uirOffset)
 {
     union {
         uint16 hl;
@@ -984,7 +988,7 @@ void modifyDigitalOutputValue(uint16 uirDigitalOp, uint8 uirOffset)
 
     *(ec_slave[0].outputs + uirOffset) = uiSplitVar.split.h;
     *(ec_slave[0].outputs + uirOffset + 1) = uiSplitVar.split.l;
-}
+}*/
 
 void modifyMaxTorqueValue(uint16 uirMaxTorque, uint8 uirOffset)
 {
@@ -1012,7 +1016,7 @@ void DriveEnable()
     uint16 uiDesiredStat = 0;
     uint32 uiLclDoNothingFlag = 0;
     //int size;
-    int retval;
+    //int retval;
     //int32 i32val;
     /*union {
         uint16 hl;
@@ -1021,7 +1025,7 @@ void DriveEnable()
             uint8 h;
         }split;
     }uiMaxTq;*/
-    retval = 0;
+    //retval = 0;
     switch (uiDriveStatus)
     {
 
@@ -1383,12 +1387,12 @@ unsigned char checkInterPolationDone()
 
 void drv_SetOperationMode(uint16 slave, int32 irSelectedMode)
 {
-    int32 iOperatingMode;
-    uint8 u16ErrCntr = 0;
+    int32 iOperatingMode = 0;
+    //uint8 u16ErrCntr = 0;
     int8 iModeOfOpnParam = 0;	//This variable value is being determined on the pg. 45 of AKD Ethercat Communication Edition K, December 2014										
-    int retval = 0;
+    //int retval = 0;
     uint8 uiRetArr[10];
-    int l = sizeof(uiRetArr) - 1;
+    //int l = sizeof(uiRetArr) - 1;
     memset(&uiRetArr, 0, 10);
 
     switch (irSelectedMode)
@@ -1431,7 +1435,7 @@ void drv_SetOperationMode(uint16 slave, int32 irSelectedMode)
         break;
     }
     //printf("\n\n\n\n\n\n\n\n\n\n Value of iModeOfOpnParam: %d", iModeOfOpnParam);
-
+    printf("Operational mode: %d", iOperatingMode);
 
     if (iModeOfOpnParam != 0)
     {
@@ -1443,7 +1447,7 @@ void drv_SetOperationMode(uint16 slave, int32 irSelectedMode)
     {
         printf("FAILED TO SET THE MODE.... NOT SUPPORTED!!!");
     }
-
+    printf("\n Slave param: %d", slave);
 }
 
 unsigned int ReadInteger(FILE* fp, unsigned int uiOffsetFromBegin)
@@ -1567,6 +1571,7 @@ void SetActualTqAndPosn()
     //SocketSendResponse(stringToTx);
 }
 
+/*
 void SetCommandStatus(UINT32 uirCmdStatus)
 {
 	unsigned int uilclErrNo = 0;
@@ -1575,6 +1580,8 @@ void SetCommandStatus(UINT32 uirCmdStatus)
 	sprintf(txStr, "SCS,%d", uirCmdStatus);
 	printf("\n StatUpdated: %d", uirCmdStatus);
 }
+*/
+
 
 void ConvertDegreeOfRotationToCount(uint32 uirRPM, uint32 uirScanIntervalInMsec, uint32 uirDegreesToRotate)
 {
@@ -1612,6 +1619,8 @@ void ConvertDegreeOfRotationToCount(uint32 uirRPM, uint32 uirScanIntervalInMsec,
     printf("\n**************** Rotation Offset: %d", uiRotationOffset);
 }
 
+
+
 UINT32 ValidateInteger(UINT32* uirIntegerToValidate, UINT32 uirIntegerMinVal, UINT32 uirIntegerMaxVal, UINT32 uirFillValIfInvalid)
 {
     UINT32 uiRetVar = 1;
@@ -1625,9 +1634,12 @@ UINT32 ValidateInteger(UINT32* uirIntegerToValidate, UINT32 uirIntegerMinVal, UI
         //*uirIntegerToValidate = uirFillValIfInvalid;
         uiRetVar = 0;
     }
-
+    if (uiRetVar == 0) {
+        *uirIntegerToValidate = uirFillValIfInvalid;
+    }
     return uiRetVar;
 }
+
 
 UINT32 ValidateFloat(float* frFloatToValidate, float frFloatMinVal, float frFloatMaxVal, float frFillValIfInvalid)
 {
@@ -1641,6 +1653,10 @@ UINT32 ValidateFloat(float* frFloatToValidate, float frFloatMinVal, float frFloa
     {
         //*frFloatToValidate = frFillValIfInvalid;
         uiRetVar = 0;
+    }
+
+    if (uiRetVar == 0) {
+        *frFloatToValidate = frFillValIfInvalid;
     }
     return uiRetVar;
 }
@@ -1664,14 +1680,14 @@ int32 calculateFinalDesiredPosn(uint32 ui32rDesRtn) {
 
 int PanasonicSetup(uint16 slave) {
     int retval;
-    uint8 u8val;
+    //uint8 u8val;
 
     //uint32 uiRet32Arr[10];
     printf("\n This is the slave parameter: %d", slave);
     //int l32 = sizeof(uiRet32Arr) - 1;
     //memset(&uiRet32Arr, 0, 10);
     retval = 0;
-    u8val = 0;
+    //u8val = 0;
     setDCModeSetup(slave);
     setSoftwarePositionLimit(slave, 0, 0);
     setFlexibleOutputPDO(slave);
@@ -1955,9 +1971,10 @@ void CALLBACK RTthread(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1
 void simpletest(char* ifname)
 {
     //int j;
-    int32 i, oloop, iloop, wkc_count, chk, slc, chkCntr;
-    UINT mmResult;
-    chkCntr = 0;
+    int32 i, oloop, iloop, chk, slc;
+    //int32 chkCntr, wkc_count;
+    uint32 mmResult;
+    //chkCntr = 0;
     needlf = FALSE;
     inOP = FALSE;
   //  int size;
@@ -2025,7 +2042,8 @@ void simpletest(char* ifname)
             ec_receive_processdata(EC_TIMEOUTRET);
 
             /* start RT thread as periodic MM timer */
-            mmResult = timeSetEvent(2, 0, RTthread, 0, TIME_PERIODIC);
+            timeBeginPeriod(1);
+            mmResult = timeSetEvent(1, 0, RTthread, 0, TIME_PERIODIC);
           
 
             /* request OP state for all slaves */
@@ -2039,7 +2057,7 @@ void simpletest(char* ifname)
             if (ec_slave[0].state == EC_STATE_OPERATIONAL)
             {
                 printf("Operational state reached for all slaves.\n");
-                wkc_count = 0;
+                //wkc_count = 0;
                 inOP = TRUE;
 
 
