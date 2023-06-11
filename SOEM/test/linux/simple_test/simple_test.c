@@ -30,11 +30,11 @@
 typedef signed char         INT8, * PINT8;
 typedef signed short        INT16, * PINT16;
 typedef signed int          INT32, * PINT32;
-typedef signed __int64      INT64, * PINT64;
+//typedef signed __int64      INT64, * PINT64;
 typedef unsigned char       UINT8, * PUINT8;
 typedef unsigned short      UINT16, * PUINT16;
 typedef unsigned int        UINT32, * PUINT32;
-typedef unsigned __int64    UINT64, * PUINT64;
+//typedef unsigned __int64    UINT64, * PUINT64;
 
 
 #define EC_TIMEOUTMON 500
@@ -364,11 +364,11 @@ void fillMotionParams(uint32 uirDesiredPosnVal, uint16 uirTqFeedFwd, uint16 uirM
 uint16 setLimitingTorqueValue(float frDesiredTorque, float frMotorMaxTorque, uint16 uirGearRatio);
 void updateStatus(uint16 uirStatus);
 void printStatus(uint16 uirDriveStat);
-void modifyControlWord(uint16 uirSlave, uint16 uirDesiredStat, uint8 uiOffset);
+void modifyControlWord(/*uint16 uirSlave,*/ uint16 uirDesiredStat/*, uint8 uiOffset*/);
 void setProfilePositionParameters(uint16 uirSlave, int32 irTargetPosn, uint32 uirProfileVelocity, uint32 uirProfileAcceleration, uint32 uirProfileDeceleration);
 void modifyInterpolatedPositionCommandValue(int32 irDesiredPosn, float frMaxTq, int32 irTargetVel);
 void modifyLatchControlWordValue(uint16 uirLatchCtlWd, uint8 uirOffset);
-void modifyTorqueFeedForwardValue(uint16 uirTqFeedFwd, uint8 uirOffset);
+void modifyTorqueFeedForwardValue(uint16 uirTqFeedFwd/*, uint8 uirOffset*/);
 void modifyDigitalOutputValue(uint16 uirDigitalOp, uint8 uirOffset);
 void modifyMaxTorqueValue(uint16 uirMaxTorque, uint8 uirOffset);
 void modifyMaxTorqueValueRegister(uint16 uirSlave, uint16 uirMaxTorque);
@@ -401,6 +401,7 @@ int32 calculateFinalDesiredPosn(uint32 ui32rDesRtn);
 
 //Code taken from https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
 //by user hmjd
+/*
 char** str_split(char* a_str, const char a_delim)
 {
     char** result = 0;
@@ -411,7 +412,7 @@ char** str_split(char* a_str, const char a_delim)
     delim[0] = a_delim;
     delim[1] = 0;
 
-    /* Count how many elements will be extracted. */
+    // Count how many elements will be extracted. 
     while (*tmp)
     {
         if (a_delim == *tmp)
@@ -422,11 +423,11 @@ char** str_split(char* a_str, const char a_delim)
         tmp++;
     }
 
-    /* Add space for trailing token. */
+    // Add space for trailing token. 
     count += last_comma < (a_str + strlen(a_str) - 1);
 
-    /* Add space for terminating null string so caller
-       knows where the list of returned strings ends. */
+    // Add space for terminating null string so caller
+    //   knows where the list of returned strings ends. 
     count++;
 
     result = malloc(sizeof(char*) * count);
@@ -448,7 +449,7 @@ char** str_split(char* a_str, const char a_delim)
 
     return result;
 }
-
+*/
 
 //IANET: 261122
 void fillMotionParams(uint32 uirDesiredPosnVal, uint16 uirTqFeedFwd, uint16 uirMaxTq)
@@ -511,8 +512,8 @@ uint16 setLimitingTorqueValue(float frDesiredTorque, float frMotorMaxTorque, uin
 
 void updateStatus(uint16 uirStatus)
 {
-    uint16 lclStat;
-    lclStat = 0;
+    //uint16 lclStat;
+    //lclStat = 0;
     int32 statUpdated = 0;
 
     if ((uirStatus & (BIT6 + BIT3 + BIT2 + BIT1 + BIT0)) == 0) {
@@ -693,7 +694,7 @@ void printStatus(uint16 uirDriveStat)
     if (uiErrorFlag == 1) {
         printf(" Error Detected  ");
         uiDesiredStat = CTL_WD_FAULT_RESET;
-        modifyControlWord(slave, uiDesiredStat, 0);
+        modifyControlWord(/*slave,*/ uiDesiredStat/*, 0*/);
 
     }
     printf("Stat: ");
@@ -748,11 +749,11 @@ void printStatus(uint16 uirDriveStat)
 
 //uint8 shutdownDone = 0;
 
-void modifyControlWord(uint16 uirSlave, uint16 uirDesiredStat, uint8 uiOffset)
+void modifyControlWord(/*uint16 uirSlave,*/ uint16 uirDesiredStat/*, uint8 uiOffset*/)
 {
    
     //uiCtlWd.hl = 0;
-    uint16 uiLclUpdateProfileVelocity = 0;
+   uint16 uiLclUpdateProfileVelocity = 0;
 
     switch (uirDesiredStat)
     {
@@ -840,10 +841,11 @@ void modifyControlWord(uint16 uirSlave, uint16 uirDesiredStat, uint8 uiOffset)
     case CTL_WD_NEW_SET_POINT:
         uiCtlWd.hl = (uiCtlWd.hl | BIT4);
         uiLclUpdateProfileVelocity = 1;
+        //Remove the following statements later! Done for compilation only!
+        if (uiLclUpdateProfileVelocity == 1)
+            uiLclUpdateProfileVelocity = 0;
         //uiOpnEnabled = 1;
-
         break;
-
     default:
         //uilclModifyFlag = 0;
         //printf("\nJJ: %d", uirDesiredStat);
@@ -952,7 +954,7 @@ void modifyLatchControlWordValue(uint16 uirLatchCtlWd, uint8 uirOffset)
     *(ec_slave[0].outputs + OUTPUT_OFFSET_CTLWD + 1) = uiSplitVar.split.h;
 }
 
-void modifyTorqueFeedForwardValue(uint16 uirTqFeedFwd, uint8 uirOffset)
+void modifyTorqueFeedForwardValue(uint16 uirTqFeedFwd/*, uint8 uirOffset*/)
 {
     union {
         uint16 hl;
@@ -1123,7 +1125,7 @@ void DriveEnable()
         break;
     }
     if (uiLclDoNothingFlag == 0) {
-        modifyControlWord(slave, uiDesiredStat, 0);
+        modifyControlWord(/*slave,*/ uiDesiredStat/*, 0*/);
     }
 
     //*(ec_slave[0].outputs + 1) = 0;
@@ -1132,13 +1134,13 @@ void DriveEnable()
 void StopDrive()
 {
     uint16 uiDesiredStat = CTL_WD_STOP;
-    modifyControlWord(slave, uiDesiredStat, 0);
+    modifyControlWord(/*slave,*/ uiDesiredStat/*, 0*/);
 }
 
 void ShutDownDrive()
 {
     uint16 uiDesiredStat = CTL_WD_SHUT_DOWN;
-    modifyControlWord(slave, uiDesiredStat, 0);
+    modifyControlWord(/*slave,*/ uiDesiredStat/*, 0*/);
 }
 
 void setOutputPDO(uint16 slave, uint16 uirOutputPDO)
@@ -1485,6 +1487,7 @@ void resetDesiredTqAndDegOfRtn() {
 
 void GetDesiredTqAndDegOfRtn()
 {
+    /*
     //To convert string to integer use atoi function
     //To convert string to float use atof function
     //strok to extract the string
@@ -1543,6 +1546,7 @@ void GetDesiredTqAndDegOfRtn()
             printf("Invalid Cmd received");
         }
     }
+    */
 }
 
 void SetActualTqAndPosn()
@@ -2100,7 +2104,8 @@ void simpletest(char* ifname)
             }
             */
             /* stop RT thread */
-            timeKillEvent(mmResult);
+            //Not in the linux Code! To be checked if it is required.
+            //timeKillEvent(mmResult);
 
             printf("\nRequest init state for all slaves\n");
             ec_slave[0].state = EC_STATE_INIT;
