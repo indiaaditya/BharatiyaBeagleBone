@@ -342,8 +342,8 @@ u_long iMode = 0;
 //UINT_PTR ListenSocket = INVALID_SOCKET;	//Changed to UINT_PTR from SOCKET because compiler was throwing an error
 //UINT_PTR ClientSocket = INVALID_SOCKET;
 
-struct addrinfo* result = NULL;
-struct addrinfo hints;
+//struct addrinfo* result = NULL;
+//struct addrinfo hints;
 
 int iSendResult;
 char recvbuf[DEFAULT_BUFLEN];
@@ -367,10 +367,10 @@ void printStatus(uint16 uirDriveStat);
 void modifyControlWord(/*uint16 uirSlave,*/ uint16 uirDesiredStat/*, uint8 uiOffset*/);
 //void setProfilePositionParameters(uint16 uirSlave, int32 irTargetPosn, uint32 uirProfileVelocity, uint32 uirProfileAcceleration, uint32 uirProfileDeceleration);
 //void modifyInterpolatedPositionCommandValue(int32 irDesiredPosn, float frMaxTq, int32 irTargetVel);
-void modifyLatchControlWordValue(uint16 uirLatchCtlWd, uint8 uirOffset);
+void modifyLatchControlWordValue(uint16 uirLatchCtlWd/*, uint8 uirOffset*/);
 void modifyTorqueFeedForwardValue(uint16 uirTqFeedFwd/*, uint8 uirOffset*/);
 //void modifyDigitalOutputValue(uint16 uirDigitalOp, uint8 uirOffset);
-void modifyMaxTorqueValue(uint16 uirMaxTorque, uint8 uirOffset);
+void modifyMaxTorqueValue(uint16 uirMaxTorque/*, uint8 uirOffset*/);
 void modifyMaxTorqueValueRegister(uint16 uirSlave, uint16 uirMaxTorque);
 void DriveEnable();
 void StopDrive();
@@ -942,7 +942,7 @@ void modifyInterpolatedPositionCommandValue(int32 irDesiredPosn, float frMaxTq, 
     *(ec_slave[0].outputs + (OUTPUT_OFFSET_MAX_TQ + 1)) = iSplitVar.split.lh;
 }
 */
-void modifyLatchControlWordValue(uint16 uirLatchCtlWd, uint8 uirOffset)
+void modifyLatchControlWordValue(uint16 uirLatchCtlWd/*, uint8 uirOffset*/)
 {
     union {
         uint16 hl;
@@ -990,7 +990,7 @@ void modifyTorqueFeedForwardValue(uint16 uirTqFeedFwd/*, uint8 uirOffset*/)
     *(ec_slave[0].outputs + uirOffset + 1) = uiSplitVar.split.l;
 }*/
 
-void modifyMaxTorqueValue(uint16 uirMaxTorque, uint8 uirOffset)
+void modifyMaxTorqueValue(uint16 uirMaxTorque/*, uint8 uirOffset*/)
 {
     union {
         uint16 hl;
