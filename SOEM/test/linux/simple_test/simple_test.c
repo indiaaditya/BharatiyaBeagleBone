@@ -26,6 +26,17 @@
 #include <Windows.h>
 #endif
 */
+
+typedef signed char         INT8, * PINT8;
+typedef signed short        INT16, * PINT16;
+typedef signed int          INT32, * PINT32;
+typedef signed __int64      INT64, * PINT64;
+typedef unsigned char       UINT8, * PUINT8;
+typedef unsigned short      UINT16, * PUINT16;
+typedef unsigned int        UINT32, * PUINT32;
+typedef unsigned __int64    UINT64, * PUINT64;
+
+
 #define EC_TIMEOUTMON 500
 
 #define DEFAULT_BUFLEN 512
@@ -322,14 +333,14 @@ uint32 ui32RtThreadOvFlowCntr = 0;
 //Socket Server related variables
 uint32 uiServerSocketStatus = SOCKET_SERVER_APP_START_INIT;
 
-WSADATA wsaData;
+//WSADATA wsaData;
 
 
 
 int iResult;
 u_long iMode = 0;
-UINT_PTR ListenSocket = INVALID_SOCKET;	//Changed to UINT_PTR from SOCKET because compiler was throwing an error
-UINT_PTR ClientSocket = INVALID_SOCKET;
+//UINT_PTR ListenSocket = INVALID_SOCKET;	//Changed to UINT_PTR from SOCKET because compiler was throwing an error
+//UINT_PTR ClientSocket = INVALID_SOCKET;
 
 struct addrinfo* result = NULL;
 struct addrinfo hints;
