@@ -36,6 +36,7 @@ typedef unsigned short      UINT16, * PUINT16;
 typedef unsigned int        UINT32, * PUINT32;
 //typedef unsigned __int64    UINT64, * PUINT64;
 
+#define stack64k (64 * 1024)
 
 #define EC_TIMEOUTMON 500
 
@@ -1702,7 +1703,7 @@ int PanasonicSetup(uint16 slave) {
 
 
 /* most basic RT thread for process data, just does IO transfer */
-void CALLBACK RTthread(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2)
+OSAL_THREAD_FUNC RTthread(void *ptr)
 {//1
     int32 i32PosnDiff = 0;
     /*	union{
@@ -1973,7 +1974,7 @@ void simpletest(char* ifname)
     //int j;
     int32 i, oloop, iloop, chk, slc;
     //int32 chkCntr, wkc_count;
-    uint32 mmResult;
+    //uint32 mmResult;
     //chkCntr = 0;
     needlf = FALSE;
     inOP = FALSE;
@@ -2042,8 +2043,11 @@ void simpletest(char* ifname)
             ec_receive_processdata(EC_TIMEOUTRET);
 
             /* start RT thread as periodic MM timer */
-            timeBeginPeriod(1);
-            mmResult = timeSetEvent(1, 0, RTthread, 0, TIME_PERIODIC);
+            //timeBeginPeriod(1);
+               /* create RT thread */
+            osal_thread_create(&thread1, stack64k * 2, &RTthread, (void*)&ctime);
+            printf("\n*********Thread Created************");
+            //mmResult = timeSetEvent(1, 0, RTthread, 0, TIME_PERIODIC);
           
 
             /* request OP state for all slaves */
