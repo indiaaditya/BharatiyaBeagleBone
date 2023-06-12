@@ -1705,7 +1705,7 @@ int PanasonicSetup(uint16 slave) {
 /* most basic RT thread for process data, just does IO transfer */
 OSAL_THREAD_FUNC RTthread()
 {//1
-    int32 i32PosnDiff = 0;
+    //int32 i32PosnDiff = 0;
     /*	union{
             int32 hl;
             struct{
@@ -1716,8 +1716,8 @@ OSAL_THREAD_FUNC RTthread()
             }split;
         }iSplitVar;
     */
-    int retval;
-    retval = 0;
+    //int retval;
+    //retval = 0;
     IOmap[0]++;
     //printf("ctlwd: %d", uiCtlWd.hl);
     ec_slave[0].outputs = opPDO;
