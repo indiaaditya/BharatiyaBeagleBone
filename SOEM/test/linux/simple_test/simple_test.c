@@ -1703,7 +1703,7 @@ int PanasonicSetup(uint16 slave) {
 
 
 /* most basic RT thread for process data, just does IO transfer */
-OSAL_THREAD_FUNC RTthread(void *ptr)
+OSAL_THREAD_FUNC RTthread()
 {//1
     int32 i32PosnDiff = 0;
     /*	union{
