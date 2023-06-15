@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\soem\ethercatbase.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\soem\ethercatcoe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\soem\ethercatconfig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\soem\ethercatdc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\soem\ethercateoe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\soem\ethercatfoe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\soem\ethercatmain.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\soem\ethercatprint.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\soem\ethercatsoe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\osal\win32\osal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\oshw\win32\nicdrv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\oshw\win32\oshw.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Proff\Clients\BharatiyaBeaglebone\SOEM\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{C3946257-F4D3-3AF9-9CED-CA322521EEF3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

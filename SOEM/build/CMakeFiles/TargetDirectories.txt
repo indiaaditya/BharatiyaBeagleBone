@@ -1,0 +1,12 @@
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/CMakeFiles/soem.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/CMakeFiles/INSTALL.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/CMakeFiles/ALL_BUILD.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/CMakeFiles/ZERO_CHECK.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/test/simple_ng/CMakeFiles/simple_ng.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/test/simple_ng/CMakeFiles/INSTALL.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/test/linux/slaveinfo/CMakeFiles/slaveinfo.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/test/linux/slaveinfo/CMakeFiles/INSTALL.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/test/linux/eepromtool/CMakeFiles/eepromtool.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/test/linux/eepromtool/CMakeFiles/INSTALL.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/test/linux/simple_test/CMakeFiles/simple_test.dir
+E:/Proff/Clients/BharatiyaBeaglebone/SOEM/build/test/linux/simple_test/CMakeFiles/INSTALL.dir

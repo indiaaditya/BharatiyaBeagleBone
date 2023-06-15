@@ -1031,7 +1031,7 @@ void DriveEnable()
     {
 
     case STATE_MACHINE_STAT_SWITCH_ON_DISABLED:	//Nothing can be done over Ethercat to change the state!
-        //printf("A");
+        printf("A");
         if (getReasonForLossOfOperationalMode == 1) {
             getReasonForLossOfOperationalMode = 0;
             printf("StatusJustBeforeLoss:%x\n", uiDelMeStatus);
@@ -1048,11 +1048,11 @@ void DriveEnable()
             break;
             */
     case STATE_MACHINE_STAT_RDY_TO_SWITCH_ON:
-        //printf("B");
+        printf("B");
         uiDesiredStat = CTL_WD_SWITCH_ON;
         break;
     case STATE_MACHINE_STAT_SWITCHED_ON:
-        //printf("C");
+        printf("C");
         uiDesiredStat = CTL_WD_ENABLE_OPN;
         break;
     case STATE_MACHINE_STAT_OPERATION_ENABLED:
@@ -1108,16 +1108,16 @@ void DriveEnable()
 
     case STATE_MACHINE_STAT_QUICK_STOP_ACTIVE:
     case STATE_MACHINE_STAT_NOT_RDY_TO_SWITCH_ON:	//The drive is booting up Wait!
-       //printf("E1");
+       printf("E1");
         break;
 
     case STATE_MACHINE_STAT_FAULT:
-        //printf("F");
+        printf("F");
         uiDesiredStat = CTL_WD_FAULT_RESET;
         break;
 
     case STATE_MACHINE_STAT_SWITCH_ON_DISABLED_WITH_VE:
-        //printf("G");
+        printf("G");
         uiDesiredStat = CTL_WD_DISABLE_VTG;//CTL_WD_SWITCH_ON;//CTL_WD_RESET_VE;
 
         break;
@@ -1125,7 +1125,7 @@ void DriveEnable()
     case STATE_MACHINE_STAT_UNKNOWN:
     case STATE_MACHINE_STAT_FAULT_REACTION_ACTIVE:
     default:
-        //printf("H");
+        printf("H");
         uiDesiredStat = CTL_WD_SWITCH_ON;
         break;
     }
@@ -1718,50 +1718,57 @@ OSAL_THREAD_FUNC RTthread()
     */
     //int retval;
     //retval = 0;
-    IOmap[0]++;
-    //printf("ctlwd: %d", uiCtlWd.hl);
-    ec_slave[0].outputs = opPDO;
+    printf("\nA");
+    while (1) {
+        IOmap[0]++;
+        //printf("ctlwd: %d", uiCtlWd.hl);
+        ec_slave[0].outputs = opPDO;
 
-
-    //Set the mode of operation initially itself
-    opPDO[OUTPUT_OFFSET_MODE_OF_OPN] = 1;//OPN_MODE_PROFILE_POSN;
-
-
-
-    ec_send_processdata();
-    wkc = ec_receive_processdata(EC_TIMEOUTRET);
-    rtcnt++;
-
-  
-    ui32RtThreadSpeedCntr++;
-
-    /* do RT control stuff here */
-
-    iErrCode.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_ERRCODE);
-    iErrCode.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_ERRCODE + 1));
-
-    uiStatusWd.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_STATUSWORD);
-    uiStatusWd.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_STATUSWORD + 1));
-    updateStatus(uiStatusWd.hl);
-
-    iPosActualValue.split.ll = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE);
-    iPosActualValue.split.lh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 1);
-    iPosActualValue.split.hl = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 2);
-    iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
-
-    ui8ModesOfOpnDisplay = *(ec_slave[0].inputs + INPUT_OFFSET_MODE_OF_OPN_DISP);
-
-    uiTqActual.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE);
-    uiTqActual.split.h = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE + 1);
+        //printf("\nAXSASSA\n");
+        //Set the mode of operation initially itself
+        opPDO[OUTPUT_OFFSET_MODE_OF_OPN] = 1;//OPN_MODE_PROFILE_POSN;
 
 
 
+        ec_send_processdata();
+        wkc = ec_receive_processdata(EC_TIMEOUTRET);
+        rtcnt++;
 
-    if (inOP == TRUE)	//indicates that servo is in operational state
-    {//2
-        DriveEnable();
 
-    }//\2
+        ui32RtThreadSpeedCntr++;
+
+        /* do RT control stuff here */
+
+        iErrCode.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_ERRCODE);
+        iErrCode.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_ERRCODE + 1));
+
+        uiStatusWd.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_STATUSWORD);
+        uiStatusWd.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_STATUSWORD + 1));
+        updateStatus(uiStatusWd.hl);
+
+        iPosActualValue.split.ll = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE);
+        iPosActualValue.split.lh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 1);
+        iPosActualValue.split.hl = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 2);
+        iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
+
+        ui8ModesOfOpnDisplay = *(ec_slave[0].inputs + INPUT_OFFSET_MODE_OF_OPN_DISP);
+
+        uiTqActual.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE);
+        uiTqActual.split.h = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE + 1);
+
+
+
+
+        if (inOP == TRUE)	//indicates that servo is in operational state
+        {//2
+            DriveEnable();
+        }//\2
+
+        
+        //This line should be at the bottom of the while loop
+        uiLoopCntr++;
+    }
+
    /* else//If the drive is not enabled then set the desired value of position as actual value so as not to start the motor on enable!
     {
         iDesiredPositionVal.hl = iPosActualValue.hl ;
@@ -1965,7 +1972,7 @@ OSAL_THREAD_FUNC RTthread()
 
 
     //}//\3
-    uiLoopCntr++;
+    
 }//\1
 
 
