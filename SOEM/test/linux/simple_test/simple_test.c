@@ -1031,7 +1031,7 @@ void DriveEnable()
     {
 
     case STATE_MACHINE_STAT_SWITCH_ON_DISABLED:	//Nothing can be done over Ethercat to change the state!
-        printf("A");
+        //printf("A");
         if (getReasonForLossOfOperationalMode == 1) {
             getReasonForLossOfOperationalMode = 0;
             printf("StatusJustBeforeLoss:%x\n", uiDelMeStatus);
@@ -1048,16 +1048,16 @@ void DriveEnable()
             break;
             */
     case STATE_MACHINE_STAT_RDY_TO_SWITCH_ON:
-        printf("B");
+        //printf("B");
         uiDesiredStat = CTL_WD_SWITCH_ON;
         break;
     case STATE_MACHINE_STAT_SWITCHED_ON:
-        printf("C");
+        //printf("C");
         uiDesiredStat = CTL_WD_ENABLE_OPN;
         break;
     case STATE_MACHINE_STAT_OPERATION_ENABLED:
         printf("X");
-        uiDesiredStat = CTL_WD_PP_MODE;
+        //uiDesiredStat = CTL_WD_PP_MODE;
         //uiLclDoNothingFlag = 1;
         //getReasonForLossOfOperationalMode = 1;
       
