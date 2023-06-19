@@ -2085,20 +2085,21 @@ void simpletest(char* ifname)
                         //socketServerAction();
                     }
 
-                    /*
+                    
                     if (wkc >= expectedWKC)
                     {
                         needlf = TRUE;
                         uiActualPosn = iPosActualValue.hl;
                         uiActualTq = uiTqActual.hl;
-                        //printStatus(uiDriveStatus);
-                        if (uiModifyCmdStatusFlag != 0)
+                        printStatus(uiDriveStatus);
+                        
+                        /*if (uiModifyCmdStatusFlag != 0)
                         {
                             SetCommandStatus(uiDesiredStatus);
                             uiModifyCmdStatusFlag = 0;
-                        }
+                        }*/
                     }
-                    */
+                    
                     osal_usleep(SCAN_INTERVAL_IN_MSEC * 10000);
                 }
                 inOP = FALSE;
