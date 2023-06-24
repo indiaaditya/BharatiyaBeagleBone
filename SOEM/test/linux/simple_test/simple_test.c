@@ -51,7 +51,16 @@ typedef unsigned int        UINT32, * PUINT32;
  //Used in 2 places:
  //OSAL Sleep Cycle: Here the value works as it is
  //for calculation: the value needs to be 1/10th
-#define SCAN_INTERVAL_IN_MSEC                                   2 //FBUS.SAMPLEPERIOD
+
+//Max value at which it worked (when multiple was 10000): 8
+//7: 9.22
+//6: 8.02
+//5: 6.59
+//4: 5.51
+//3: 4.41
+//1: 1.51
+
+#define SCAN_INTERVAL_IN_MSEC                                   7 //FBUS.SAMPLEPERIOD
 #define SOCKET_SCAN_CYCLES                                      20
 
 #define SOCKET_SERVER_APP_START_INIT							1
@@ -698,45 +707,45 @@ void printStatus(uint16 uirDriveStat)
         modifyControlWord(/*slave,*/ uiDesiredStat/*, 0*/);
 
     }
-    printf("Stat: ");
+    //printf("Stat: ");
 
     switch (uirDriveStat)
     {
     case STATE_MACHINE_STAT_UNKNOWN:
-        printf("Unknown               \t");
+        //printf("Unknown               \t");
         break;
     case STATE_MACHINE_STAT_NOT_RDY_TO_SWITCH_ON:
-        printf("Not Ready to Switch On\t");
+        //printf("Not Ready to Switch On\t");
         break;
     case STATE_MACHINE_STAT_SWITCH_ON_DISABLED:
-        printf("Switch On Disabled    \t");
+        //printf("Switch On Disabled    \t");
         break;
     case STATE_MACHINE_STAT_SWITCH_ON_DISABLED_WITH_INTERNAL_LIMIT_ACTIVE:
-        printf("Switch On Disabled  IntLimAct \t");
+        //printf("Switch On Disabled  IntLimAct \t");
         break;
     case STATE_MACHINE_STAT_RDY_TO_SWITCH_ON:
-        printf("Ready to Switch On   \t");
+        //printf("Ready to Switch On   \t");
         break;
     case STATE_MACHINE_STAT_SWITCHED_ON:
-        printf("Switched On          \t");
+        //printf("Switched On          \t");
         break;
     case STATE_MACHINE_STAT_OPERATION_ENABLED:
-        printf("OE\t");
+        //printf("OE\t");
         break;
     case STATE_MACHINE_STAT_FAULT:
-        printf("Fault Detected       \t");
+        //printf("Fault Detected       \t");
         break;
     case STATE_MACHINE_STAT_FAULT_REACTION_ACTIVE:
-        printf("Fault Reaction Active\t");
+        //printf("Fault Reaction Active\t");
         break;
     case STATE_MACHINE_STAT_QUICK_STOP_ACTIVE:
-        printf("Quick Stop Active    \t");
+        //printf("Quick Stop Active    \t");
         break;
     case STATE_MACHINE_STAT_SWITCH_ON_DISABLED_WITH_VE:
-        printf("Switch ON disabled with VE\t");
+        //printf("Switch ON disabled with VE\t");
         break;
     default:
-        printf("Unknown              \t");
+        //printf("Unknown              \t");
         break;
     }
     //tq:%d  , uiTqActual.hl
@@ -1191,7 +1200,7 @@ void setDCModeSetup(uint16 uirSlave) {
     u16val = 2;
     retval += ec_SDOwrite(uirSlave, 0x1C32, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTRXM);
 
-    u32val = 2000000;
+    u32val = 10000000;
     retval += ec_SDOwrite(uirSlave, 0x1C32, 0x02, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
 
     u16val = 2;
@@ -1767,6 +1776,9 @@ OSAL_THREAD_FUNC RTthread()
         
         //This line should be at the bottom of the while loop
         uiLoopCntr++;
+
+        osal_usleep(SCAN_INTERVAL_IN_MSEC * 10000);
+
     }
 
    /* else//If the drive is not enabled then set the desired value of position as actual value so as not to start the motor on enable!
@@ -2230,7 +2242,7 @@ OSAL_THREAD_FUNC ecatcheck(void* ptr)
             if (!ec_group[currentgroup].docheckstate)
                 printf("OK : all slaves resumed OPERATIONAL.\n");
         }
-        osal_usleep(10000);
+        osal_usleep(SCAN_INTERVAL_IN_MSEC * 10000);
     }
 }
 
