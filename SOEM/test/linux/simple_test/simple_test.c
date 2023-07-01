@@ -60,7 +60,7 @@ typedef unsigned int        UINT32, * PUINT32;
 //3: 4.41
 //1: 1.51
 
-#define SCAN_INTERVAL_IN_MSEC                                   20 //FBUS.SAMPLEPERIOD
+#define SCAN_INTERVAL_IN_MSEC                                   7 //FBUS.SAMPLEPERIOD
 #define SOCKET_SCAN_CYCLES                                      20
 
 #define SOCKET_SERVER_APP_START_INIT							1
@@ -549,7 +549,7 @@ void updateStatus(uint16 uirStatus)
     if ((uirStatus & (BIT6 + BIT5 + BIT3 + BIT2 + BIT1 + BIT0)) == (BIT5 + BIT2 + BIT1 + BIT0)) {
         uiDriveStatus = STATE_MACHINE_STAT_OPERATION_ENABLED;
         statUpdated = 1;
-        printf(" OE:%x inop:%d", uirStatus, inOP);
+        //printf(" OE:%x inop:%d", uirStatus, inOP);
 
         //Delete this section later
         uiDelMeStatus = uirStatus;
