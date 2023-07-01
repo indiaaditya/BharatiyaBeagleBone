@@ -60,7 +60,7 @@ typedef unsigned int        UINT32, * PUINT32;
 //3: 4.41
 //1: 1.51
 
-#define SCAN_INTERVAL_IN_MSEC                                   2 //FBUS.SAMPLEPERIOD
+#define SCAN_INTERVAL_IN_MSEC                                   20 //FBUS.SAMPLEPERIOD
 #define SOCKET_SCAN_CYCLES                                      20
 
 #define SOCKET_SERVER_APP_START_INIT							1
