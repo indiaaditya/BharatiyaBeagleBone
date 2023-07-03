@@ -1858,7 +1858,7 @@ OSAL_THREAD_FUNC_RT RTthread(void* ptr)
         //This line should be at the bottom of the while loop
         uiLoopCntr++;
 
-        osal_usleep(SCAN_INTERVAL_IN_MSEC * 10000);
+        osal_usleep(SCAN_INTERVAL_IN_MSEC * 1000);
 
     }
 
@@ -2352,7 +2352,7 @@ OSAL_THREAD_FUNC ecatcheck(void* ptr)
             if (!ec_group[currentgroup].docheckstate)
                 printf("OK : all slaves resumed OPERATIONAL.\n");
         }
-        osal_usleep(SCAN_INTERVAL_IN_MSEC * 10000);
+        osal_usleep(SCAN_INTERVAL_IN_MSEC * 1000);
     }
 }
 
