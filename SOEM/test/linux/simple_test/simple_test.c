@@ -1796,6 +1796,7 @@ OSAL_THREAD_FUNC_RT RTthread(void* ptr)
         /* calculate next cycle start */
         add_timespec(&ts, cycletime + toff);
         /* wait to cycle start */
+        printf("\ndr:%d", dorun);
         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, &tleft);
         if (dorun > 0) {
             IOmap[0]++;
