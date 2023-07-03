@@ -1790,6 +1790,9 @@ OSAL_THREAD_FUNC_RT RTthread(void* ptr)
     }
     cycletime = *(int*)ptr * 1000; /* cycletime in ns */
     printf("\ncycletime:%lld", cycletime);
+    printf("\n ht: %d", ht);
+    printf("\n ts.tv_nsec: %ld", ts.tv_nsec);
+
     toff = 0;
     dorun = 0;
     ec_send_processdata();
@@ -2195,6 +2198,9 @@ void simpletest(char* ifname)
                 for (i = 1; i <= 15000; i++)
                 {
                     i--;    //To run the loop infinitely.
+
+                    printf("Processdata cycle %5d , Wck %3d, DCtime %12"PRId64", dt %12"PRId64", O:",
+                        dorun, wkc, ec_DCtime, gl_delta);
 
                     iSocketElapsedCntr++;
                     if ((iSocketElapsedCntr > SOCKET_SCAN_CYCLES) && (uiSetMotionFlag == 0))
