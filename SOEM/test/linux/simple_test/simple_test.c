@@ -1789,6 +1789,7 @@ OSAL_THREAD_FUNC_RT RTthread(void* ptr)
         ts.tv_nsec -= NSEC_PER_SEC;
     }
     cycletime = *(int*)ptr * 1000; /* cycletime in ns */
+    printf("\ncycletime:%d", cycletime);
     toff = 0;
     dorun = 0;
     ec_send_processdata();
@@ -1814,6 +1815,9 @@ OSAL_THREAD_FUNC_RT RTthread(void* ptr)
             {
                 /* calulate toff to get linux time and DC synced */
                 ec_sync(ec_DCtime, cycletime, &toff);
+            }
+            else {
+                printf("n");
             }
             ec_send_processdata();
             rtcnt++;
