@@ -1,8 +1,10 @@
 {
   "ExpandedNodes": [
     "",
+    "\\soem",
     "\\test",
     "\\test\\linux",
+    "\\test\\linux\\red_test",
     "\\test\\linux\\simple_test",
     "\\test\\linux\\simple_test\\out"
   ],

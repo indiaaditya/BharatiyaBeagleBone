@@ -10,6 +10,12 @@
  */
 
 #include <assert.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <sched.h>
+#include <time.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
@@ -37,6 +43,8 @@ typedef unsigned int        UINT32, * PUINT32;
 //typedef unsigned __int64    UINT64, * PUINT64;
 
 #define stack64k (64 * 1024)
+
+#define NSEC_PER_SEC 1000000000
 
 #define EC_TIMEOUTMON 500
 
@@ -199,6 +207,25 @@ typedef unsigned int        UINT32, * PUINT32;
 #define OUTPUT_OFFSET_TARGET_POSN           7
 #define OUTPUT_OFFSET_MAX_MOTOR_SPEED       11
 
+
+//For integration of the function: clock_gettime
+//Source: https://stackoverflow.com/questions/5404277/porting-clock-gettime-to-windows
+//Solution by: jws
+
+#define MS_PER_SEC      1000ULL     // MS = milliseconds
+#define US_PER_MS       1000ULL     // US = microseconds
+#define HNS_PER_US      10ULL       // HNS = hundred-nanoseconds (e.g., 1 hns = 100 ns)
+#define NS_PER_US       1000ULL
+
+#define HNS_PER_SEC     (MS_PER_SEC * US_PER_MS * HNS_PER_US)
+#define NS_PER_HNS      (100ULL)    // NS = nanoseconds
+#define NS_PER_SEC      (MS_PER_SEC * US_PER_MS * NS_PER_US)
+
+
+
+
+
+
 char IOmap[4096];
 OSAL_THREAD_HANDLE thread1;
 int expectedWKC;
@@ -234,6 +261,7 @@ uint32 uiInterpolationActive = 0;//Bit 12
 
 uint32 u32val;
 uint16 slave;
+uint16 wc;
 
 //Operational Variables
 int16 uiSelectedMode = 0;
@@ -369,6 +397,10 @@ int getReasonForLossOfOperationalMode = 0;
 int updatePrintCntr = 0;
 int scanCntr = 0;
 
+int64 gl_delta;
+int64 toff;
+int dorun = 0;
+
 uint16 uiDelMeStatus = 0;
 void fillMotionParams(uint32 uirDesiredPosnVal, uint16 uirTqFeedFwd, uint16 uirMaxTq);
 uint16 setLimitingTorqueValue(float frDesiredTorque, float frMotorMaxTorque, uint16 uirGearRatio);
@@ -408,10 +440,12 @@ void socketServerAction();
 char** str_split(char* a_str, const char a_delim);
 void SocketSendResponse(char*);
 int32 calculateFinalDesiredPosn(uint32 ui32rDesRtn);
+int clock_gettime_monotonic(struct timespec* tv);
+void add_timespec(struct timespec* ts, int64 addtime);
 
 //Code taken from https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
 //by user hmjd
-/*
+
 char** str_split(char* a_str, const char a_delim)
 {
     char** result = 0;
@@ -459,7 +493,7 @@ char** str_split(char* a_str, const char a_delim)
 
     return result;
 }
-*/
+
 
 //IANET: 261122
 void fillMotionParams(uint32 uirDesiredPosnVal, uint16 uirTqFeedFwd, uint16 uirMaxTq)
@@ -1200,17 +1234,33 @@ void setDCModeSetup(uint16 uirSlave) {
     u16val = 2;
     retval += ec_SDOwrite(uirSlave, 0x1C32, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTRXM);
 
-    u32val = 10000000;
+    u32val = 2000000; //Same value has to be fed in 1C33:3
     retval += ec_SDOwrite(uirSlave, 0x1C32, 0x02, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
 
     u16val = 2;
     retval += ec_SDOwrite(uirSlave, 0x1C33, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTRXM);
 
-    u32val = 0;
+    u32val = 0;//10000000;
     retval += ec_SDOwrite(uirSlave, 0x1C33, 0x03, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
 
     u8val = 1;
     retval += ec_SDOwrite(uirSlave, 0x6060, 0x00, FALSE, sizeof(u8val), &u8val, EC_TIMEOUTRXM);
+
+
+    //For putting the system in free run mode!
+    /*
+    u16val = 0;
+    retval += ec_SDOwrite(uirSlave, 0x1C32, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTRXM);
+
+    u32val = 0;
+    retval += ec_SDOwrite(uirSlave, 0x1C32, 0x02, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
+
+    u16val = 0;
+    retval += ec_SDOwrite(uirSlave, 0x1C33, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTRXM);
+
+    u8val = 1;
+    retval += ec_SDOwrite(uirSlave, 0x6060, 0x00, FALSE, sizeof(u8val), &u8val, EC_TIMEOUTRXM);
+    */
 
     
 
@@ -1712,7 +1762,7 @@ int PanasonicSetup(uint16 slave) {
 
 
 /* most basic RT thread for process data, just does IO transfer */
-OSAL_THREAD_FUNC RTthread()
+OSAL_THREAD_FUNC_RT RTthread(void* ptr)
 {//1
     //int32 i32PosnDiff = 0;
     /*	union{
@@ -1725,45 +1775,70 @@ OSAL_THREAD_FUNC RTthread()
             }split;
         }iSplitVar;
     */
-    //int retval;
-    //retval = 0;
-    printf("\nA");
+    struct timespec   ts, tleft;
+    int ht;
+    int64 cycletime;
+
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    //clock_gettime_monotonic(&ts);
+    ht = (ts.tv_nsec / 1000000) + 1; /* round to nearest ms */
+    ts.tv_nsec = ht * 1000000;
+    if (ts.tv_nsec >= NSEC_PER_SEC) {
+        ts.tv_sec++;
+        ts.tv_nsec -= NSEC_PER_SEC;
+    }
+    cycletime = *(int*)ptr * 1000; /* cycletime in ns */
+    toff = 0;
+    dorun = 0;
+    ec_send_processdata();
     while (1) {
-        IOmap[0]++;
-        //printf("ctlwd: %d", uiCtlWd.hl);
-        ec_slave[0].outputs = opPDO;
+        /* calculate next cycle start */
+        add_timespec(&ts, cycletime + toff);
+        /* wait to cycle start */
+        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, &tleft);
+        if (dorun > 0) {
+            IOmap[0]++;
+            dorun++;
+            //printf("ctlwd: %d", uiCtlWd.hl);
+            ec_slave[0].outputs = opPDO;
 
-        //printf("\nAXSASSA\n");
-        //Set the mode of operation initially itself
-        opPDO[OUTPUT_OFFSET_MODE_OF_OPN] = 1;//OPN_MODE_PROFILE_POSN;
+            //printf("\nAXSASSA\n");
+            //Set the mode of operation initially itself
+            opPDO[OUTPUT_OFFSET_MODE_OF_OPN] = 1;//OPN_MODE_PROFILE_POSN;
 
 
+            wkc = ec_receive_processdata(EC_TIMEOUTRET);
+            if (ec_slave[0].hasdc)
+            {
+                /* calulate toff to get linux time and DC synced */
+                ec_sync(ec_DCtime, cycletime, &toff);
+            }
+            ec_send_processdata();
+            rtcnt++;
 
-        ec_send_processdata();
-        wkc = ec_receive_processdata(EC_TIMEOUTRET);
-        rtcnt++;
+            /* do RT control stuff here */
 
+            iErrCode.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_ERRCODE);
+            iErrCode.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_ERRCODE + 1));
 
-        ui32RtThreadSpeedCntr++;
+            uiStatusWd.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_STATUSWORD);
+            uiStatusWd.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_STATUSWORD + 1));
+            updateStatus(uiStatusWd.hl);
 
-        /* do RT control stuff here */
+            iPosActualValue.split.ll = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE);
+            iPosActualValue.split.lh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 1);
+            iPosActualValue.split.hl = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 2);
+            iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
 
-        iErrCode.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_ERRCODE);
-        iErrCode.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_ERRCODE + 1));
+            ui8ModesOfOpnDisplay = *(ec_slave[0].inputs + INPUT_OFFSET_MODE_OF_OPN_DISP);
 
-        uiStatusWd.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_STATUSWORD);
-        uiStatusWd.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_STATUSWORD + 1));
-        updateStatus(uiStatusWd.hl);
+            uiTqActual.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE);
+            uiTqActual.split.h = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE + 1);
 
-        iPosActualValue.split.ll = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE);
-        iPosActualValue.split.lh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 1);
-        iPosActualValue.split.hl = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 2);
-        iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
+            ui32RtThreadSpeedCntr++;
+        }
+   
 
-        ui8ModesOfOpnDisplay = *(ec_slave[0].inputs + INPUT_OFFSET_MODE_OF_OPN_DISP);
-
-        uiTqActual.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE);
-        uiTqActual.split.h = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE + 1);
 
 
 
@@ -2001,6 +2076,9 @@ void simpletest(char* ifname)
  //   int32 i32val;
 //    int16 i16val;
 
+    uint32 t;
+    uint64 t1;
+
     printf("Starting simple test\n");
     resetDesiredTqAndDegOfRtn();
 
@@ -2010,7 +2088,7 @@ void simpletest(char* ifname)
         printf("ec_init on %s succeeded.\n", ifname);
         /* find and auto-config slaves */
 
-
+        
         if (ec_config_init(FALSE) > 0)
         {
             printf("%d slaves found and configured.\n", ec_slavecount);
@@ -2036,10 +2114,32 @@ void simpletest(char* ifname)
             }
             ec_config_map(&IOmap);
             ec_configdc();
+            ec_dcsync0(1, TRUE, 2000000U, 2000U);
 
             printf("Slaves mapped, state to SAFE_OP.\n");
+           
             /* wait for all slaves to reach SAFE_OP state */
             ec_statecheck(0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
+
+            t1 = 0;
+            wc = ec_FPRD(ec_slave[1].configadr, ECT_REG_DCSYSTIME, sizeof(t1), &t1, EC_TIMEOUTRET);
+            printf("\nSystem time of Slave: %lld", t1);
+            wc = ec_FPRD(ec_slave[1].configadr, ECT_REG_DCSYSDELAY, sizeof(t), &t, EC_TIMEOUTRET);
+            printf("\nDelay time of Slave: %d", t);
+            wc = ec_FPRD(ec_slave[1].configadr, ECT_REG_DCSYSOFFSET, sizeof(t1), &t1, EC_TIMEOUTRET);
+            printf("\nOffset time of Slave: %lld", t1);
+            wc = ec_FPRD(ec_slave[1].configadr, ECT_REG_DCSOF, sizeof(t1), &t1, EC_TIMEOUTRET);
+            printf("\nLocal time of Slave: %lld", t1);
+            wc = ec_FPRD(ec_slave[1].configadr, ECT_REG_DCSYSDIFF, sizeof(t), &t, EC_TIMEOUTRET);
+            printf("\nSystem time difference of slave: %d", t);
+            wc = ec_FPRD(ec_slave[1].configadr, ECT_REG_DCSTART0, sizeof(t1), &t1, EC_TIMEOUTRET);
+            printf("\nNext sync0 start time of slave: %lld\n", t1);
+
+
+
+
+
+
 
             oloop = ec_slave[0].Obytes;
             if ((oloop == 0) && (ec_slave[0].Obits > 0)) oloop = 1;
@@ -2047,8 +2147,7 @@ void simpletest(char* ifname)
             iloop = ec_slave[0].Ibytes;
 
             if ((iloop == 0) && (ec_slave[0].Ibits > 0)) iloop = 1;
-
-            if (iloop > 8) iloop = 8;//Temporarily commented by ASA to find the actual number of bytes in response
+            if (iloop > 8) iloop = 8;
 
             printf("segments : %d : %d %d %d %d\n", ec_group[0].nsegments, ec_group[0].IOsegment[0], ec_group[0].IOsegment[1], ec_group[0].IOsegment[2], ec_group[0].IOsegment[3]);
 
@@ -2064,7 +2163,7 @@ void simpletest(char* ifname)
             /* start RT thread as periodic MM timer */
             //timeBeginPeriod(1);
                /* create RT thread */
-            osal_thread_create(&thread1, stack64k * 2, &RTthread, (void*)&ctime);
+            osal_thread_create_rt(&thread1, stack64k * 2, &RTthread, (void*)&ctime);
             printf("\n*********Thread Created************");
             //mmResult = timeSetEvent(1, 0, RTthread, 0, TIME_PERIODIC);
           
@@ -2072,6 +2171,8 @@ void simpletest(char* ifname)
             /* request OP state for all slaves */
             ec_writestate(0);
             chk = 40;
+            /* activate cyclic process data */
+            dorun = 1;
             /* wait for all slaves to reach OP state */
             do
             {
@@ -2087,7 +2188,7 @@ void simpletest(char* ifname)
                 /* cyclic loop, reads data from RT thread */
                 for (i = 1; i <= 15000; i++)
                 {
-                    i--;
+                    i--;    //To run the loop infinitely.
 
                     iSocketElapsedCntr++;
                     if ((iSocketElapsedCntr > SOCKET_SCAN_CYCLES) && (uiSetMotionFlag == 0))
@@ -2112,8 +2213,9 @@ void simpletest(char* ifname)
                         }*/
                     }
                     
-                    osal_usleep(SCAN_INTERVAL_IN_MSEC * 10000);
+                    osal_usleep(500000);    //Sleep for 0.5 Seconds
                 }
+                dorun = 0;
                 inOP = FALSE;
             }
             else
@@ -2487,3 +2589,36 @@ int main(int argc, char* argv[])
     printf("End program\n");
     return (0);
 }
+
+void add_timespec(struct timespec* ts, int64 addtime)
+{
+    int64 sec, nsec;
+
+    nsec = addtime % NSEC_PER_SEC;
+    sec = (addtime - nsec) / NSEC_PER_SEC;
+    ts->tv_sec += sec;
+    ts->tv_nsec += (long)nsec;
+    if (ts->tv_nsec >= NSEC_PER_SEC)
+    {
+        nsec = ts->tv_nsec % NSEC_PER_SEC;
+        ts->tv_sec += (ts->tv_nsec - nsec) / NSEC_PER_SEC;
+        ts->tv_nsec = (long)nsec;
+    }
+}
+
+
+/* PI calculation to get linux time synced to DC time */
+void ec_sync(int64 reftime, int64 cycletime, int64* offsettime)
+{
+    static int64 integral = 0;
+    int64 delta;
+    /* set linux sync point 50us later than DC sync, just as example */
+    delta = (reftime - 50000) % cycletime;
+    if (delta > (cycletime / 2)) { delta = delta - cycletime; }
+    if (delta > 0) { integral++; }
+    if (delta < 0) { integral--; }
+    *offsettime = -(delta / 100) - (integral / 20);
+    gl_delta = delta;
+}
+
+
