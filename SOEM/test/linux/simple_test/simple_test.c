@@ -1789,7 +1789,7 @@ OSAL_THREAD_FUNC_RT RTthread(void* ptr)
         ts.tv_nsec -= NSEC_PER_SEC;
     }
     cycletime = *(int*)ptr * 1000; /* cycletime in ns */
-    printf("\ncycletime:%d", cycletime);
+    printf("\ncycletime:%lld", cycletime);
     toff = 0;
     dorun = 0;
     ec_send_processdata();
@@ -2200,6 +2200,7 @@ void simpletest(char* ifname)
                     if ((iSocketElapsedCntr > SOCKET_SCAN_CYCLES) && (uiSetMotionFlag == 0))
                     {
                         iSocketElapsedCntr = 0;
+                        //printf("SS:%d", );
                         //printf("\nA");
                         //socketServerAction();
                     }
@@ -2218,7 +2219,8 @@ void simpletest(char* ifname)
                             uiModifyCmdStatusFlag = 0;
                         }*/
                     }
-                    
+                    printStatus(uiDriveStatus);
+
                     osal_usleep(500000);    //Sleep for 0.5 Seconds
                 }
                 dorun = 0;
