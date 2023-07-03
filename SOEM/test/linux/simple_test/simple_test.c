@@ -442,10 +442,11 @@ void SocketSendResponse(char*);
 int32 calculateFinalDesiredPosn(uint32 ui32rDesRtn);
 int clock_gettime_monotonic(struct timespec* tv);
 void add_timespec(struct timespec* ts, int64 addtime);
+void ec_sync(int64 reftime, int64 cycletime, int64* offsettime);
 
 //Code taken from https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
 //by user hmjd
-
+/*
 char** str_split(char* a_str, const char a_delim)
 {
     char** result = 0;
@@ -493,7 +494,7 @@ char** str_split(char* a_str, const char a_delim)
 
     return result;
 }
-
+*/
 
 //IANET: 261122
 void fillMotionParams(uint32 uirDesiredPosnVal, uint16 uirTqFeedFwd, uint16 uirMaxTq)
