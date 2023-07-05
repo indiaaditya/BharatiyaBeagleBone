@@ -2125,7 +2125,7 @@ void simpletest(char* ifname)
             }
             ec_config_map(&IOmap);
             ec_configdc();
-            ec_dcsync0(1, TRUE, 2000000U, 2000U);
+            //ec_dcsync0(1, TRUE, 2000000U, 2000U);
 
             printf("Slaves mapped, state to SAFE_OP.\n");
            
@@ -2133,6 +2133,7 @@ void simpletest(char* ifname)
             ec_statecheck(0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4);
 
             t1 = 0;
+            /*
             wc = ec_FPRD(ec_slave[1].configadr, ECT_REG_DCSYSTIME, sizeof(t1), &t1, EC_TIMEOUTRET);
             printf("\nSystem time of Slave: %lld", t1);
             wc = ec_FPRD(ec_slave[1].configadr, ECT_REG_DCSYSDELAY, sizeof(t), &t, EC_TIMEOUTRET);
@@ -2145,7 +2146,7 @@ void simpletest(char* ifname)
             printf("\nSystem time difference of slave: %d", t);
             wc = ec_FPRD(ec_slave[1].configadr, ECT_REG_DCSTART0, sizeof(t1), &t1, EC_TIMEOUTRET);
             printf("\nNext sync0 start time of slave: %lld\n", t1);
-
+            */
 
 
 
