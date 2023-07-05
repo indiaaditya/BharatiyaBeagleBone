@@ -1779,6 +1779,8 @@ OSAL_THREAD_FUNC_RT RTthread(void* ptr)
     struct timespec   ts, tleft;
     int ht;
     int64 cycletime;
+    //For debug only
+    tleft.tv_nsec = 1000;
 
     clock_gettime(CLOCK_MONOTONIC, &ts);
     //clock_gettime_monotonic(&ts);
