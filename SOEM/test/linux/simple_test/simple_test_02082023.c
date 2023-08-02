@@ -218,13 +218,13 @@ typedef unsigned int        UINT32, * PUINT32;
 #define HUNDRED_THOU    100000
 #define TEN_THOU        10000
 #define THOU            1000
-#define HUNDRED            1000
+#define HUNDRED         100
 
 
 
 
 char IOmap[4096];
-OSAL_THREAD_HANDLE thread1;
+OSAL_THREAD_HANDLE thread1, thread2;
 int expectedWKC;
 boolean needlf;
 volatile int wkc;
@@ -325,7 +325,6 @@ int32 iBuffPosValue;
 uint32 uiBlockedRotorCntr;
 uint32 uiBlockedRotorFlag;
 
-uint8 opPDO[19];
 
 
 int64 i64BuffVal;
@@ -408,6 +407,8 @@ struct timespec myTime;
 
 int diffTimerSyncAchievedFlag = 0;
 int diffTimerSyncAchievedCntr = 0;
+int dataRdyForXtraction = 0;
+
 
 
 
@@ -451,7 +452,7 @@ void SocketSendResponse(char*);
 int32 calculateFinalDesiredPosn(uint32 ui32rDesRtn);
 void ec_sync(int64 reftime, int64 cycletime , int64 *offsettime);
 void add_timespec(struct timespec *ts, int64 addtime);
-
+void extractFlexibleInputPDO_data(void);
 
 //Code taken from https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
 //by user hmjd
@@ -784,7 +785,6 @@ void printStatus(uint16 uirDriveStat)
     //if (updatePrintCntr == 100000) {
         //updatePrintCntr = 0;
         printf("PAV: %d MdOfOpn:%d status:%x Pde:%d ipa: %d SC: %d ErCd: %X CW: %x\n", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl/*uiTargetReachedFlag*/);
-        printf("\nOpPDO: %x,%x", opPDO[0], opPDO[1]);
     //}
 }
 
@@ -895,25 +895,11 @@ void modifyControlWord(/*uint16 uirSlave,*/ uint16 uirDesiredStat/*, uint8 uiOff
 
     }
 
-    opPDO[OUTPUT_OFFSET_CTLWD] = uiCtlWd.split.l;
-    opPDO[OUTPUT_OFFSET_CTLWD + 1] = uiCtlWd.split.h;
-    opPDO[OUTPUT_OFFSET_TARGET_TQ] = 0; //            3
-    opPDO[OUTPUT_OFFSET_TARGET_TQ + 1] = 0xFF; //            3
-    opPDO[OUTPUT_OFFSET_MAX_TQ] = 0x00;
-    opPDO[OUTPUT_OFFSET_MAX_TQ + 1] = 0xFF;
-    //printf("\nOpPDO: %d,%d", opPDO[0], opPDO[1]);
 
-    if (uiOpnEnabled < 2) {
-        //printf("@");
-        //ec_SDOwrite(uirSlave, 0x6040, 0x00, FALSE, sizeof(uiCtlWd.hl), &(uiCtlWd.hl), EC_TIMEOUTRXM);
-    }
-    if (uiOpnEnabled == 1)
-        uiOpnEnabled = 2;
-/*    if (uiLclUpdateProfileVelocity == 1) {
-        uiLclUpdateProfileVelocity = 0;
-        ec_SDOwrite(uirSlave, 0x6081, 0x00, FALSE, sizeof(uiCtlWd.hl), &(uiCtlWd.hl), EC_TIMEOUTRXM);
-    }
-    */
+    modifyLatchControlWordValue(uiCtlWd.hl);
+   
+
+
 }
 
 
@@ -983,7 +969,7 @@ void modifyInterpolatedPositionCommandValue(int32 irDesiredPosn, float frMaxTq, 
     *(ec_slave[0].outputs + (OUTPUT_OFFSET_MAX_TQ + 1)) = iSplitVar.split.lh;
 }
 */
-void modifyLatchControlWordValue(uint16 uirLatchCtlWd/*, uint8 uirOffset*/)
+void modifyLatchControlWordValue(uint16 uirLatchCtlWd)
 {
     union {
         uint16 hl;
@@ -1170,7 +1156,7 @@ void DriveEnable()
         break;
     }
     if (uiLclDoNothingFlag == 0) {
-        modifyControlWord(/*slave,*/ uiDesiredStat/*, 0*/);
+        modifyControlWord(uiDesiredStat);
     }
 
     //*(ec_slave[0].outputs + 1) = 0;
@@ -1228,19 +1214,19 @@ void setDCModeSetup(uint16 uirSlave) {
     //int32 i32val;
     //int16 i16val;
     //Refer Pg. 7 of the Ethercat document of Panasonic    
-    u16val = 2; //As per document value: 2
+    u16val = 2;
     retval += ec_SDOwrite(uirSlave, 0x1C32, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTRXM);
 
-    u32val = 20000000; //As per document value: 20000000
+    u32val = 10000000;
     retval += ec_SDOwrite(uirSlave, 0x1C32, 0x02, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
 
-    u16val = 2; //As per document value: 2
+    u16val = 2;
     retval += ec_SDOwrite(uirSlave, 0x1C33, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTRXM);
 
-    u32val = 0; //As per document value: 0
+    u32val = 0;
     retval += ec_SDOwrite(uirSlave, 0x1C33, 0x03, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
 
-    u8val = 1; 
+    u8val = 1;
     retval += ec_SDOwrite(uirSlave, 0x6060, 0x00, FALSE, sizeof(u8val), &u8val, EC_TIMEOUTRXM);
 
     
@@ -1746,542 +1732,49 @@ int PanasonicSetup(uint16 slave) {
 
 int64 cntr = 0;
 
-OSAL_THREAD_FUNC RTthread(void *ptr)
-{//1
-    //int32 i32PosnDiff = 0;
-    /*	union{
-            int32 hl;
-            struct{
-                uint8 ll;
-                uint8 lh;
-                uint8 hl;
-                uint8 hh;
-            }split;
-        }iSplitVar;
-    */
-    //int retval;
-    //retval = 0;
 
+
+OSAL_THREAD_FUNC_RT  RTthread(){
     struct timespec ts;
     struct timespec tleft;
     int ht;
     int64 cycletime;
-    int garbageVal = *(int*)ptr; 
-    garbageVal++;
 
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    printf("\n Monotonic Clock: %ld", ts.tv_nsec);
-    ht = (ts.tv_nsec / 1000000) + 1; /* round to nearest ms */
-    printf("\n HT: %d", ht);
+    clock_gettime(CLOCK_MONOTONIC, &ts);    
+    ht = (ts.tv_nsec / 1000000) + 1; // round to nearest ms 
     ts.tv_nsec = ht * 1000000;
-    printf("\n ts.tv_nsec: %ld", ts.tv_nsec);
     if (ts.tv_nsec >= NSEC_PER_SEC)
     {
         ts.tv_sec++;
         ts.tv_nsec -= NSEC_PER_SEC;
     }
-    cycletime = SCAN_INTERVAL_IN_USEC * 1000; /* cycletime in ns */
-    printf("\n Cycletime: %lld", cycletime);
-
+    cycletime = SCAN_INTERVAL_IN_USEC * 1000; // cycletime in ns
     toff = 0;
+    dorun = 0;
     ec_send_processdata();
 
-    printf("\nA");
-    while (1) {
-        IOmap[0]++;
-        //printf("ctlwd: %d", uiCtlWd.hl);
-
-
-      /* calculate next cycle start */
-      add_timespec(&ts, cycletime + toff);
-      /* wait to cycle start */
-
-      /*See obsidian documentation under Bharatiya-Endurance for further details of this function*/
-      clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, &tleft);
-      myTime = ts;
-
-      if (ec_slave[0].hasdc)
-      {
-            /* calulate toff to get linux time and DC synced */
-            ec_sync(ec_DCtime, cycletime, &toff);
-      }
-
-      
-      ec_slave[0].outputs = opPDO;
-
-      //printf("\nAXSASSA\n");
-      //Set the mode of operation initially itself
-      opPDO[OUTPUT_OFFSET_MODE_OF_OPN] = 1;//OPN_MODE_PROFILE_POSN;
-     
-
-   
-      ec_send_processdata();        
-      wkc = ec_receive_processdata(EC_TIMEOUTRET);
-        
-
-      //ui32RtThreadSpeedCntr++;
-      
-      /* do RT control stuff here */
-      
-      iErrCode.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_ERRCODE);
-      iErrCode.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_ERRCODE + 1));
-
-      uiStatusWd.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_STATUSWORD);
-      uiStatusWd.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_STATUSWORD + 1));
-      updateStatus(uiStatusWd.hl);
-
-      iPosActualValue.split.ll = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE);
-      iPosActualValue.split.lh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 1);
-      iPosActualValue.split.hl = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 2);
-      iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
-
-      ui8ModesOfOpnDisplay = *(ec_slave[0].inputs + INPUT_OFFSET_MODE_OF_OPN_DISP);
-
-      uiTqActual.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE);
-      uiTqActual.split.h = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE + 1);
-
-      if (inOP == TRUE) // indicates that servo is in operational state
-      {                 // 2
-            DriveEnable();
-      } //\2
-
-        //This line should be at the bottom of the while loop
-        uiLoopCntr++;
-    }
-
-   /* else//If the drive is not enabled then set the desired value of position as actual value so as not to start the motor on enable!
+    while (1)
     {
-        iDesiredPositionVal.hl = iPosActualValue.hl ;
-        modifyInterpolatedPositionCommandValue(iDesiredPositionVal.hl, 10, 5);
-    }*/
+        add_timespec(&ts, cycletime + toff);
+        /* wait to cycle start */
+        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, &tleft);
+        ec_send_processdata();        
+        wkc = ec_receive_processdata(EC_TIMEOUTRET);
 
-    //Commenting //3 section for a trial.
-
-    //if (uiDriveStatus == STATE_MACHINE_STAT_OPERATION_ENABLED)
-    //{//3
-    //    if (uiSetMotionFlag == 0)
-    //    {//4						
-    //        if (uiInterpolationActive == 1)
-    //        {//5
-    //            switch (uiDesiredStatus)
-    //            {//6
-    //            case CMD_STAT_LOADED:
-    //                //printf("\n CMD_STAT_LOADED \n CMD_STAT_LOADED \n CMD_STAT_LOADED");
-    //                printf("\nRtn:%d,Des.Tq:%f,dirn:%d,rpm:%d", uiDesiredDegreeOfRtn, fDesiredTq, uiDesiredDirectionOfRtn, uiDesiredRPM);
-    //                if (ValidateInteger(&uiDesiredDegreeOfRtn, 1, 14400, 1) == 1)	//Valid Degree of Rtn Entered !!!3600 should be 2520
-    //                {//7
-    //                    if (ValidateFloat(&fDesiredTq, 1, 50, 1) == 1)	//Valid Torque Value is entered
-    //                    {//8								
-    //                        if (ValidateInteger(&uiDesiredDirectionOfRtn, 0, 1, 0) == 1)	//Valid Direction of Rotation Has Been Entered
-    //                        {//9	
-    //                            if (ValidateInteger(&uiDesiredRPM, 5, 30, 10) == 1)
-    //                            {//10
-    //                                //If the function reaches this point then it indicates that all the parameters have been entered correctly!!											
-    //                                uiDesiredStatus = CMD_STAT_ACCEPTED;
-    //                                uiModifyCmdStatusFlag = 1;
-    //                                printf("\n Command Accepted!");
-    //                                //Fill up the desired Position Value
-    //                                ConvertDegreeOfRotationToCount(uiDesiredRPM, SCAN_INTERVAL_IN_MSEC / 10, uiDesiredDegreeOfRtn);
-    //                                iFinalPosnDesired = calculateFinalDesiredPosn(uiDesiredDirectionOfRtn);
-    //                                //!printf("\n PAV Used: %d, Rotation Offset: %d",iPosActualValue.hl, uiRotationOffset);
-    //                                //!printf("\n Setting the Desired Status!!!");
-    //                                //modifyInterpolatedPositionCommandValue(iDesiredPositionVal.hl,fDesiredTq,5);	
-    //                                uiSetMotionFlag = 1;
-    //                                //Set the desired value once here.
-    //                                /*if (uiDesiredDirectionOfRtn == CW) {
-    //                                    iDesiredPositionVal.hl = iPosActualValue.hl - uiRotationOffset;
-    //                                }
-    //                                else {
-    //                                    iDesiredPositionVal.hl = iPosActualValue.hl + uiRotationOffset;
-    //                                }*/
-    //                                iDesiredPositionVal.hl = iPosActualValue.hl;
-
-    //                                iMotionCompletedFlag = 0;
-
-    //                                u16DirnCntr = 0;
-    //                                uiBlockedRotorCntr = 0;
-    //                                u16MotionTimeOutCntr = 0;
-    //                                ui2MsecCntr = 0;
-    //                                ui64Cntr = 0;
-    //                                //printf("\n And I wanted the motion!!");
-    //                            }//\10
-    //                            else {
-    //                                uiDesiredStatus = CMD_STAT_REJECTED;
-    //                                printf("*****REJECTED*****");
-    //                                uiModifyCmdStatusFlag = 1;
-    //                            }
-    //                        }//\9
-    //                        else {
-    //                            uiDesiredStatus = CMD_STAT_REJECTED;
-    //                            uiModifyCmdStatusFlag = 1;
-    //                        }
-    //                    }//\8
-    //                    else {
-    //                        uiDesiredStatus = CMD_STAT_REJECTED;
-    //                        uiModifyCmdStatusFlag = 1;
-    //                    }
-    //                }//\7
-    //                else {
-    //                    uiDesiredStatus = CMD_STAT_REJECTED;
-    //                    uiModifyCmdStatusFlag = 1;
-    //                }
-    //                break;
-
-    //            case CMD_STAT_ACCEPTED:	//If Cmd Stat is accepted then set motion flag has to be 1. If not reset it... this is an error condition!!!
-    //                uiDesiredStatus = CMD_STAT_UNKNOWN;
-    //                uiModifyCmdStatusFlag = 1;
-    //                //SetCommandStatus(CMD_STAT_UNKNOWN);
-    //                break;
-
-    //            default:
-    //                break;
-    //            }//\6
-    //        }//\5				
-    //    }//\4
-
-
-    //    //This section of code was implemented to check that the RtThread really runs every 2 msec.
-    //    /*
-    //    if(ui32RtThreadSpeedCntr >= 1000)
-    //    {
-    //        printf("\n\n\n\n TICK TOCK TICK TOCK: %d - %d\n\n\n",ui32RtThreadSpeedCntr,ui32RtThreadOvFlowCntr);
-    //        ui32RtThreadSpeedCntr = 0;
-    //        ui32RtThreadOvFlowCntr++;
-    //        if(ui32RtThreadOvFlowCntr >= 100)
-    //        {
-    //            ui32RtThreadOvFlowCntr = 0;
-    //            printf("\n\n\n\n OVERFLOW DETECTED!!!!\nOVERFLOW DETECTED!!!!\nOVERFLOW DETECTED!!!!\n\n\n");
-    //        }
-    //    }
-    //    */
-
-    //    if (uiSetMotionFlag == 1)
-    //    {//4				
-    //        u16MotionTimeOutCntr++;
-    //        iBuffPosValue = iDesiredPositionVal.hl;
-
-    //        if (uiDesiredDirectionOfRtn == CW) {
-    //            iDesiredPositionVal.hl = iDesiredPositionVal.hl - uiRotationOffset;
-    //        }
-    //        else {
-    //            iDesiredPositionVal.hl = iDesiredPositionVal.hl + uiRotationOffset;
-    //        }
-    //        if (ui32StepsExecuted > 2500) {
-    //            printf("\n DP: %d", iDesiredPositionVal.hl);
-    //        }
-
-    //        //Blocked Rotor Detection Logic Start
-    //        /*
-    //        i32PosnDiff = iBuffPosValue - iPosActualValue.hl;
-    //        if (i32PosnDiff < 0) i32PosnDiff *= -1;
-    //        printf("\nPos Diff: %d", i32PosnDiff);
-    //        if (i32PosnDiff > 100000) { //Indicates very small movement was achieved
-    //            uiBlockedRotorCntr++;
-    //            printf("\n blocked rotor: %d", uiBlockedRotorCntr);
-    //        }
-    //        else
-    //            uiBlockedRotorCntr = 0;
-
-    //        if (uiBlockedRotorCntr > BLOCK_ROTOR_DECLARE_CNT) {
-    //            ui32StepsExecuted = ui32StepsProgramed + 100; //This effectively says that the job is done if rotor is locked!
-    //        }
-    //        */
-    //        //Blocked Rotor Detection Logic End
-    //        ui32StepsExecuted++;
-    //        modifyInterpolatedPositionCommandValue(iDesiredPositionVal.hl, fDesiredTq, 5);
-    //        if (ui32StepsExecuted > 2500) {
-    //            printf("\tFP: %d", iFinalPosnDesired);
-    //            printf("\tSteps Ex: %d", ui32StepsExecuted);
-    //            printf("\tAV:%ld", iPosActualValue.hl);
-    //        }
-
-    //        if (uiDesiredDirectionOfRtn == CW) {
-    //            if (iPosActualValue.hl <= iFinalPosnDesired) {
-    //                iMotionCompletedFlag = 1;
-    //                printf("\nACSCSCSCSC AV: %d FP: %d", iPosActualValue.hl, iFinalPosnDesired);
-    //            }
-    //        }
-    //        else {
-    //            if (iPosActualValue.hl >= iFinalPosnDesired) {
-    //                iMotionCompletedFlag = 1;
-    //                printf("\nBBBBCSCSCSCSC AV: %d FP: %d", iPosActualValue.hl, iFinalPosnDesired);
-    //            }
-    //        }
-
-    //        //inidicates that the motion is complete
-    //        //if(ui32StepsExecuted >= 2000)
-    //        //if ((ui32StepsExecuted >= (ui32StepsProgramed)))
-    //        if ((ui32StepsExecuted >= (ui32StepsProgramed)))
-    //        {
-    //            printf("\nSE: %d", ui32StepsExecuted);
-    //            iMotionCompletedFlag = 1;
-    //            printf("\nXXXZZZCSCSCSCSC");
-    //        }
-
-    //        if (iMotionCompletedFlag == 1) {
-    //            uiDesiredStatus = CMD_STAT_COMPLETED_POSN;
-    //            uiStatusResetCntr = 0;
-    //            uiModifyCmdStatusFlag = 1;
-    //            uiSetMotionFlag = 0;
-    //            ui2MsecCntr = 0;
-    //            ui32StepsProgramed = 0;
-    //            ui32StepsExecuted = 0;
-    //            iMotionCompletedFlag = 0;
-    //            modifyInterpolatedPositionCommandValue(iDesiredPositionVal.hl, 0, 5);
-    //        }
-    //        ui64Cntr++;
-
-    //        if (u16MotionTimeOutCntr > MOTION_TIMEOUT_VAL)	//Indicates that Motion Has Timed Out
-    //        {//5
-    //            iDesiredPositionVal.hl = iPosActualValue.hl;
-    //            modifyInterpolatedPositionCommandValue(iDesiredPositionVal.hl, 0, 5);
-    //            //while(1){
-    //            printf("\n\n\n\n\nTIME OUTTTTTTTTTTTT\n\n\n\n");
-    //            //}
-    //            uiSetMotionFlag = 0;
-    //            u16MotionTimeOutCntr = 0;
-    //            StopDrive();
-    //            ui2MsecCntr = 0;
-    //        }//\5
-
-
-    //        //i32PosnDiff = iPosActualValue.hl - iDesiredPositionVal.hl;
-    //        //if(i32PosnDiff < 0) i32PosnDiff *= -1;	//Convert negative value to +ve
-
-    //    }//\4
-
-
-    //}//\3
-    
-}//\1
-
-
-void simpletest(char* ifname)
-{//1
-    //int j;
-    int32 oloop, iloop, slc;
-    //int32 chk, i;
-    //int32 chkCntr, wkc_count;
-    //uint32 mmResult;
-    //chkCntr = 0;
-    needlf = FALSE;
-    inOP = FALSE;
-    int chk = 40; 
- //   int delMeIteration = 0;
-  //  int size;
- //   int32 i32val;
-//    int16 i16val;
-
-    int ctime;
-    ctime = SCAN_INTERVAL_IN_MSEC;
-
-
-    printf("Starting simple test\n");
-    resetDesiredTqAndDegOfRtn();
-
-    /* initialise SOEM, bind socket to ifname */
-    if (ec_init(ifname))
-    {//2
-        printf("ec_init on %s succeeded.\n", ifname);
-        /* find and auto-config slaves */
-
-
-        if (ec_config_init(FALSE) > 0)
-        {//3
-            printf("%d slaves found and configured.\n", ec_slavecount);
-
-            if ((ec_slavecount >= 1))	//Earlier it was only >1, thus this loop was not getting executed!
-            {//4
-                for (slc = 1; slc <= ec_slavecount; slc++)
-                {//5
-
-                    //Panasonic Ethercat Servo Motor
-                    if ((ec_slave[slc].eep_man == MANUFACTURER_ID) && (ec_slave[slc].eep_id == PRODUCT_ID))
-                    {//6
-                        printf("It gives us great pleasure to inform you that Panasonic Ethercat Servo has been found!!!\n");
-                        printf("Found %s at position %d\n", ec_slave[slc].name, slc);
-                        // link slave specific setup to preop->safeop hook
-                        ec_slave[1].PO2SOconfig = &PanasonicSetup;
-                        
-                    }//\6
-                }//\5
-            }//\4
-            else
-            {//4
-                printf("Could not enter the if loop\n");
-            }//\4
-            ec_config_map(&IOmap);  
-            ec_configdc();  //Configure distributed Clocks
-
-            printf("Slaves mapped, state to SAFE_OP.\n");
-            /* wait for all slaves to reach SAFE_OP state */
-            if(ec_statecheck(0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4) == EC_STATE_SAFE_OP ){//4
-                printf("Slave is in safe operational mode.\n");
-            }//\4
+        if(wkc < expectedWKC)
+            printf("\n Need to handle ERROR. Erroneous data received!");
+        else{
+            dataRdyForXtraction = 1;
+        }
             
-            oloop = ec_slave[0].Obytes;
-            if ((oloop == 0) && (ec_slave[0].Obits > 0)) oloop = 1;
-            if (oloop > 8) oloop = 8;
-            iloop = ec_slave[0].Ibytes;
-
-            if ((iloop == 0) && (ec_slave[0].Ibits > 0)) iloop = 1;
-
-            if (iloop > 8) iloop = 8;
-
-            printf("segments : %d : %d %d %d %d\n", ec_group[0].nsegments, ec_group[0].IOsegment[0], ec_group[0].IOsegment[1], ec_group[0].IOsegment[2], ec_group[0].IOsegment[3]);            
-
-            ec_send_processdata();
-            ec_receive_processdata(EC_TIMEOUTRET);
-
-            /* create RT thread */
-            osal_thread_create_rt(&thread1, stack64k * 2, &RTthread,(void*) &ctime);
-            printf("\n*********Thread Created************");
-
-            while (1)
-            {//4
-                if (diffTimerSyncAchievedFlag == 1)
-                {//5
-                    printf("Request operational state for all slaves\n");
-                    printf("oloop: %d, iloop: %d \n", oloop, iloop);
-                    expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
-                    printf("Calculated workcounter %d\n", expectedWKC);
-                    ec_slave[0].state = EC_STATE_OPERATIONAL;
-
-                    // request OP state for all slaves
-                    ec_writestate(0);
-                    // wait for all slaves to reach OP state
-                    do
-                    {//6
-                        ec_statecheck(0, EC_STATE_OPERATIONAL, 50000);
-                    } while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL));//\6
-
-                    if (ec_slave[0].state == EC_STATE_OPERATIONAL)
-                    {//6
-                        printf("Operational state reached for all slaves.\n");
-                        // wkc_count = 0;
-                        inOP = TRUE;
-                    }//\6
-
-                    diffTimerSyncAchievedFlag = 2;
-                }//\5
-
-                if(diffTimerSyncAchievedFlag == 2){
-                    printStatus(uiDriveStatus);
-                }
-
-                osal_usleep(1000000);
-            }//\4
-        }//\3
-        else{//3       
-            printf("No slaves found!\n");
-        }//\3
-    }//\2
-}//\1
-
-
-
-            /*
-
-
-          
-            // send one valid process data to make outputs in slaves happy
-
-
-
-            //mmResult = timeSetEvent(1, 0, RTthread, 0, TIME_PERIODIC);
-          
-
-            // request OP state for all slaves 
-            ec_writestate(0);
-            chk = 40;
-            // wait for all slaves to reach OP state 
-            do
-            {
-                ec_statecheck(0, EC_STATE_OPERATIONAL, 50000);
-            } while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL));
-            if (ec_slave[0].state == EC_STATE_OPERATIONAL)
-            {
-                printf("Operational state reached for all slaves.\n");
-                //wkc_count = 0;
-                inOP = TRUE;
-
-
-                // cyclic loop, reads data from RT thread 
-                for (i = 1; i <= 15000; i++)
-                {
-                    i--;
-
-                    iSocketElapsedCntr++;
-                    if ((iSocketElapsedCntr > SOCKET_SCAN_CYCLES) && (uiSetMotionFlag == 0))
-                    {
-                        iSocketElapsedCntr = 0;
-                        //printf("\nA");
-                        //socketServerAction();
-                    }
-
-                    
-                    if (wkc >= expectedWKC)
-                    {
-                        needlf = TRUE;
-                        uiActualPosn = iPosActualValue.hl;
-                        uiActualTq = uiTqActual.hl;
-                        printStatus(uiDriveStatus);
-                        
-                        //if (uiModifyCmdStatusFlag != 0)
-                        //{
-                        //    SetCommandStatus(uiDesiredStatus);
-                        //    uiModifyCmdStatusFlag = 0;
-                        //}
-                    }
-                    
-                    osal_usleep(SCAN_INTERVAL_IN_MSEC * 10000);
-                }
-                inOP = FALSE;
-            }
-            else
-            {
-                printf("Not all slaves reached operational state.\n");
-                ec_readstate();
-                for (i = 1; i <= ec_slavecount; i++)
-                {
-                    if (ec_slave[i].state != EC_STATE_OPERATIONAL)
-                    {
-                        printf("Slave %d State=0x%2.2x StatusCode=0x%4.4x : %s\n",
-                            i, ec_slave[i].state, ec_slave[i].ALstatuscode, ec_ALstatuscode2string(ec_slave[i].ALstatuscode));
-                    }
-                }
-            }
-
-         
-
-            printf("\nRequest init state for all slaves\n");
-            ec_slave[0].state = EC_STATE_INIT;
-            // request INIT state for all slaves 
-            ec_writestate(0);
-        }
-        else
-        {
-            printf("No slaves found!\n");
-        }
-        printf("End simple test, close socket\n");
-        // stop SOEM, close socket 
-        ec_close();
         
+     
     }
-    else
-    {
-        printf("No socket connection on %s\nExcecute as root\n", ifname);
-    }
-    */
-    //}//\3
-//}
+}
 
-OSAL_THREAD_FUNC ecatcheck(void* ptr)
+OSAL_THREAD_FUNC ecatcheck()
 {
     int slave;
-    (void)ptr;                  /* Not used */
-
-
     while (1)
     {
         if (inOP && ((wkc < expectedWKC) || ec_group[currentgroup].docheckstate))
@@ -2354,110 +1847,287 @@ OSAL_THREAD_FUNC ecatcheck(void* ptr)
     }
 }
 
+void simpletest(char *ifname)
+{ // 1
+    // int j;
+    int32 oloop, iloop, slc;
+    // int32 chk, i;
+    // int32 chkCntr, wkc_count;
+    // uint32 mmResult;
+    // chkCntr = 0;
+    needlf = FALSE;
+    inOP = FALSE;
+    int chk = 40;
+    //   int delMeIteration = 0;
+    //  int size;
+    //   int32 i32val;
+    //    int16 i16val;
 
-int main(int argc, char* argv[])
-{
-    printf("Endurance 2\n");
-    printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
-    printf("argc:%d \n", argc);
+    int iomap_size;
 
-    if (argc > 1)
+    uint16_t sync_mode;
+    uint32_t cycle_time;
+    uint32_t minimum_cycle_time;
+    uint32_t sync0_cycle_time;
+    int ret = 0, l;
+
+    printf("Starting simple test\n");
+    resetDesiredTqAndDegOfRtn();
+
+    /* initialise SOEM, bind socket to ifname */
+    if (ec_init(ifname))
+    { // 2
+        printf("ec_init on %s succeeded.\n", ifname);
+        /* find and auto-config slaves */
+
+        if (ec_config_init(FALSE) > 0)
+        { // 3
+            printf("%d slaves found and configured.\n", ec_slavecount);
+
+            if ((ec_slavecount >= 1)) // Earlier it was only >1, thus this loop was not getting executed!
+            {                         // 4
+                for (slc = 1; slc <= ec_slavecount; slc++)
+                { // 5
+
+                    // Panasonic Ethercat Servo Motor
+                    if ((ec_slave[slc].eep_man == MANUFACTURER_ID) && (ec_slave[slc].eep_id == PRODUCT_ID))
+                    { // 6
+                        printf("It gives us great pleasure to inform you that Panasonic Ethercat Servo has been found!!!\n");
+                        printf("Found %s at position %d\n", ec_slave[slc].name, slc);
+                        // link slave specific setup to preop->safeop hook
+                        ec_slave[1].PO2SOconfig = &PanasonicSetup;
+
+                    } //\6
+                }     //\5
+            }         //\4
+            else
+            { // 4
+                printf("Could not enter the if loop\n");
+            } //\4
+            iomap_size = ec_config_map(&IOmap);
+            printf("SOEM IOMap size: %d\n", iomap_size); // Returns 36
+            ec_configdc();                               // Configure distributed Clocks
+            // ec_dcsync0(1, TRUE, 2000000U, 0);
+
+            printf("Slaves mapped, state to SAFE_OP.\n");
+            /* wait for all slaves to reach SAFE_OP state */
+            if (ec_statecheck(0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE * 4) == EC_STATE_SAFE_OP)
+            { // 4
+                printf("Slave is in safe operational mode.\n");
+            } //\4
+
+            oloop = ec_slave[0].Obytes;
+            if ((oloop == 0) && (ec_slave[0].Obits > 0))
+                oloop = 1; // If less than 8 bits assign 1 byte
+            if (oloop > 8)
+                oloop = 8; // Not allowed more than 8 bytes
+
+            iloop = ec_slave[0].Ibytes;
+            if ((iloop == 0) && (ec_slave[0].Ibits > 0))
+                iloop = 1; // If less than 8 bits assign 1 byte
+            if (iloop > 8)
+                iloop = 8; // Not allowed more than 8 bytes
+            printf("oloop: %d, iloop: %d \n", oloop, iloop);
+
+            printf("segments : %d : %d %d %d %d\n", ec_group[0].nsegments, ec_group[0].IOsegment[0], ec_group[0].IOsegment[1], ec_group[0].IOsegment[2], ec_group[0].IOsegment[3]);
+
+            ec_slave[0].state = EC_STATE_OPERATIONAL;
+            ec_send_processdata();
+            ec_receive_processdata(EC_TIMEOUTRET);
+
+            printf("Request operational state for all slaves\n");
+            expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
+            printf("Calculated workcounter %d\n", expectedWKC);
+            ec_slave[0].state = EC_STATE_OPERATIONAL;
+
+            // request OP state for all slaves
+            ec_writestate(0);
+            // wait for all slaves to reach OP state
+            do
+            { // 4
+                ec_statecheck(0, EC_STATE_OPERATIONAL, 50000);
+            } while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL)); //\6
+
+            if (ec_statecheck(0, EC_STATE_OPERATIONAL, EC_TIMEOUTSTATE) != EC_STATE_OPERATIONAL)
+            { // 4
+                fprintf(stderr, "OPERATIONAL state not set, exiting\n");
+            } //\4
+
+            ec_readstate();
+
+            // ideally should run a loop for checking the number of slaves
+            // taking shortcut since there is only 1 slave in our project
+            printf("\nSlave: 1\n Name:%s\n Output size: %dbits\n Input size: %dbits\n State: %d\n Delay: %d[ns]\n Has DC: %d\n",
+                   ec_slave[1].name, ec_slave[1].Obits, ec_slave[1].Ibits,
+                   ec_slave[1].state, ec_slave[1].pdelay, ec_slave[1].hasdc);
+            if (ec_slave[1].hasdc)
+                printf(" DCParentport:%d\n", ec_slave[1].parentport);
+            printf(" Activeports:%d.%d.%d.%d\n", (ec_slave[1].activeports & 0x01) > 0,
+                   (ec_slave[1].activeports & 0x02) > 0,
+                   (ec_slave[1].activeports & 0x04) > 0,
+                   (ec_slave[1].activeports & 0x08) > 0);
+            printf(" Configured address: %4.4x\n", ec_slave[1].configadr);
+
+            l = sizeof(sync_mode);
+            // ideally 1st parameter should be filled programatically. Another shortcut!
+            ret += ec_SDOread(1, 0x1c32, 0x01, FALSE, &l, &sync_mode, EC_TIMEOUTRXM);
+            l = sizeof(cycle_time);
+            ret += ec_SDOread(1, 0x1c32, 0x01, FALSE, &l, &cycle_time, EC_TIMEOUTRXM);
+            l = sizeof(minimum_cycle_time);
+            ret += ec_SDOread(1, 0x1c32, 0x05, FALSE, &l, &minimum_cycle_time, EC_TIMEOUTRXM);
+            l = sizeof(sync0_cycle_time);
+            ret += ec_SDOread(1, 0x1c32, 0x0a, FALSE, &l, &sync0_cycle_time, EC_TIMEOUTRXM);
+            printf("PDO syncmode %02x, cycle time %d ns (min %d), sync0 cycle time %d ns, ret = %d\n", sync_mode, cycle_time, minimum_cycle_time, sync0_cycle_time, ret);
+
+            printf("\n*********************Finished configuration successfully\n");
+
+            // Cycle worker thread (in our case RTthread) needs to be started here.
+            osal_thread_create_rt(&thread1, stack64k * 2, &RTthread, 0); //&ctime was being passed here in the original code. scan time was being passed as an argument. Our scan time is fixed to 2 ms so no need to send the parameter
+            osal_thread_create(&thread2, stack64k * 4, &ecatcheck, 0);
+
+            printf("\n*********Thread Created************");
+
+            // start the acyclic part here
+            while (1)
+            {
+
+                if(dataRdyForXtraction == 1){
+                    //printf("\n AA: %d", dataRdyForXtraction );
+                    dataRdyForXtraction = 0;
+                    extractFlexibleInputPDO_data();
+                    DriveEnable();
+                }    
+
+                
+            }
+        } //\2
+    }     //\3
+
+} //\1
+
+    int main(int argc, char *argv[])
     {
-        // create thread to handle slave error handling in OP 
-  //      pthread_create( &thread1, NULL, (void *) &ecatcheck, (void*) &ctime);
-        printf("Creating thread...\n");
-        osal_thread_create(&thread1, 128000, &ecatcheck, (void*)&ctime);
-        printf("Starting cyclic part...\n");
-        // start cyclic part 
-        simpletest(argv[1]);
-    }
-    else
-    {
-        ec_adaptert* adapter = NULL;
-        printf("Usage: simple_test ifname1\nifname = eth0 for example\n");
+        printf("Endurance 2\n");
+        printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
+        printf("argc:%d \n", argc);
 
-        printf("\nAvailable adapters:\n");
-        adapter = ec_find_adapters();
-        while (adapter != NULL)
+        if (argc > 1)
         {
-            printf("    - %s  (%s)\n", adapter->name, adapter->desc);
-            adapter = adapter->next;
+            // start cyclic part
+            simpletest(argv[1]);
         }
-        ec_free_adapters(adapter);
-    }
-
-    printf("End program\n");
-    return (0);
-}
-
-
-//Functions added from red_test
-/* PI calculation to get linux time synced to DC time */
-void ec_sync(int64 reftime, int64 cycletime , int64 *offsettime)
-{
-   static int64 integral = 0;
-   int64 delta;
-   /* set linux sync point 50us later than DC sync, just as example */
-   delta = (reftime - 50000) % cycletime;
-   if(delta> (cycletime / 2)) { delta= delta - cycletime; }
-   if(delta>0){ integral++; }
-   if(delta<0){ integral--; }
-   *offsettime = -(delta / 100) - (integral / 20);
-   gl_delta = delta;
-   if ((gl_delta < 1000) && (diffTimerSyncAchievedFlag == 0)){
-    diffTimerSyncAchievedCntr++;
-    if (diffTimerSyncAchievedCntr > 1000)
-    {
-        diffTimerSyncAchievedFlag = 1;
-        printf("\n Sync Achieved..");
-    }
-    printf("\n Sync: %d",diffTimerSyncAchievedCntr);
-   }
-
-    /*
-   if ((gl_delta < 1000) && (diffTimerSyncAchievedFlag == 0))
-   {
-        diffTimerSyncAchievedCntr++;
-        if (diffTimerSyncAchievedCntr > 1000)
+        else
         {
-            diffTimerSyncAchievedFlag = 1;
-            printf("\n Sync Achieved..");
+            ec_adaptert *adapter = NULL;
+            printf("Usage: simple_test ifname1\nifname = eth0 for example\n");
+
+            printf("\nAvailable adapters:\n");
+            adapter = ec_find_adapters();
+            while (adapter != NULL)
+            {
+                printf("    - %s  (%s)\n", adapter->name, adapter->desc);
+                adapter = adapter->next;
+            }
+            ec_free_adapters(adapter);
         }
-   }
-   */
-   /*
-   if(gl_deltaPrintFlag == 0){
-    //gl_deltaArr[gl_deltaCntr] = gl_delta;
-    gl_deltaCntr++;
-   }
-   
 
-   if(gl_deltaCntr > 500)
-   {
-        gl_deltaCntr = 0;
-        gl_deltaPrintFlag = 1;
-   } 
-   */ 
-   
-}
+        printf("End program\n");
+        return (0);
+    }
 
-/* add ns to timespec */
-void add_timespec(struct timespec *ts, int64 addtime)
-{
-   int64 sec, nsec;
+    // Functions added from red_test
+    /* PI calculation to get linux time synced to DC time */
+    void ec_sync(int64 reftime, int64 cycletime, int64 * offsettime)
+    {
+        static int64 integral = 0;
+        int64 delta;
+        /* set linux sync point 50us later than DC sync, just as example */
+        delta = (reftime - 50000) % cycletime;
+        if (delta > (cycletime / 2))
+        {
+            delta = delta - cycletime;
+        }
+        if (delta > 0)
+        {
+            integral++;
+        }
+        if (delta < 0)
+        {
+            integral--;
+        }
+        *offsettime = -(delta / 100) - (integral / 20);
+        gl_delta = delta;
+        if ((gl_delta < 1000))
+        {
+            diffTimerSyncAchievedCntr++;
+            if (diffTimerSyncAchievedCntr > 1000)
+            {
+                diffTimerSyncAchievedFlag = 1;
+                printf("\n Sync Achieved..");
+            }
+            printf("\n Sync: %d", diffTimerSyncAchievedCntr);
+        }
 
-   nsec = addtime % NSEC_PER_SEC;
-   sec = (addtime - nsec) / NSEC_PER_SEC;
-   ts->tv_sec += sec;
-   ts->tv_nsec += nsec;
-   if ( ts->tv_nsec >= NSEC_PER_SEC )
-   {
-      nsec = ts->tv_nsec % NSEC_PER_SEC;
-      ts->tv_sec += (ts->tv_nsec - nsec) / NSEC_PER_SEC;
-      ts->tv_nsec = nsec;
-   }
-}
+        /*
+       if ((gl_delta < 1000) && (diffTimerSyncAchievedFlag == 0))
+       {
+            diffTimerSyncAchievedCntr++;
+            if (diffTimerSyncAchievedCntr > 1000)
+            {
+                diffTimerSyncAchievedFlag = 1;
+                printf("\n Sync Achieved..");
+            }
+       }
+       */
+        /*
+        if(gl_deltaPrintFlag == 0){
+         //gl_deltaArr[gl_deltaCntr] = gl_delta;
+         gl_deltaCntr++;
+        }
 
 
+        if(gl_deltaCntr > 500)
+        {
+             gl_deltaCntr = 0;
+             gl_deltaPrintFlag = 1;
+        }
+        */
+    }
 
+    /* add ns to timespec */
+    void add_timespec(struct timespec * ts, int64 addtime)
+    {
+        int64 sec, nsec;
 
+        nsec = addtime % NSEC_PER_SEC;
+        sec = (addtime - nsec) / NSEC_PER_SEC;
+        ts->tv_sec += sec;
+        ts->tv_nsec += nsec;
+        if (ts->tv_nsec >= NSEC_PER_SEC)
+        {
+            nsec = ts->tv_nsec % NSEC_PER_SEC;
+            ts->tv_sec += (ts->tv_nsec - nsec) / NSEC_PER_SEC;
+            ts->tv_nsec = nsec;
+        }
+    }
+
+    void extractFlexibleInputPDO_data()
+    {
+        iErrCode.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_ERRCODE);
+        iErrCode.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_ERRCODE + 1));
+
+        uiStatusWd.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_STATUSWORD);
+        uiStatusWd.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_STATUSWORD + 1));
+        updateStatus(uiStatusWd.hl);
+        printStatus(uiDriveStatus);
+
+        iPosActualValue.split.ll = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE);
+        iPosActualValue.split.lh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 1);
+        iPosActualValue.split.hl = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 2);
+        iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
+
+        ui8ModesOfOpnDisplay = *(ec_slave[0].inputs + INPUT_OFFSET_MODE_OF_OPN_DISP);
+
+        uiTqActual.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE);
+        uiTqActual.split.h = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE + 1);
+    }
