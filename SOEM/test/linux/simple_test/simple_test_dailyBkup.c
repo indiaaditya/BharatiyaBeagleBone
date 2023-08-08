@@ -193,13 +193,14 @@ typedef unsigned int UINT32, *PUINT32;
 #define INPUT_OFFSET_MODE_OF_OPN_DISP 4
 #define INPUT_OFFSET_POSN_ACTUAL_VALUE 5
 #define INPUT_OFFSET_VEL_ACTUAL_VALUE 9
-#define INPUT_OFFSET_TQ_ACTUAL_VALUE 11
+#define INPUT_OFFSET_TQ_ACTUAL_VALUE 13
 
 #define OUTPUT_OFFSET_CTLWD 0
 #define OUTPUT_OFFSET_MODE_OF_OPN 2
 #define OUTPUT_OFFSET_PROFILE_VELOCITY 3
 #define OUTPUT_OFFSET_MAX_TQ 7
 #define OUTPUT_OFFSET_TARGET_POSN 9
+#define OUTPUT_OFFSET_TARGET_TQ 13
 
 #define NSEC_PER_SEC 1000000000
 #define MSEC_PER_SEC 1000000
@@ -266,7 +267,20 @@ union
         uint8 l;
         uint8 h;
     } split;
-} uiMaxTorque, uiStatusWd, uiTqOffset, uiTqActual;
+} uiMaxTorque, uiStatusWd, uiTqOffset;
+
+union
+{
+    int16 hl;
+    struct
+    {
+        uint8 l;
+        uint8 h;
+    } split;
+} iTqActual;
+
+
+
 
 union
 {
@@ -397,7 +411,7 @@ int delMeOpnCntr = 0;
 int delMeOpnExpectedFlag = 0;
 int MotorOpnStatus = 0;
 
-void fillMotionParams(uint32 uirProfileVelocity, uint16 uirMaxTq, int32 irTgtPosn);
+void fillMotionParams(uint32 uirProfileVelocity, int16 irMaxTq, int32 irTgtPosn);
 uint16 setLimitingTorqueValue(float frDesiredTorque, float frMotorMaxTorque, uint16 uirGearRatio);
 void updateStatus(uint16 uirStatus);
 void printStatus(uint16 uirDriveStat);
@@ -489,7 +503,7 @@ char** str_split(char* a_str, const char a_delim)
 */
 
 // IANET: 261122
-void fillMotionParams(uint32 uirProfileVelocity, uint16 uirMaxTq, int32 irTgtPosn)
+void fillMotionParams(uint32 uirProfileVelocity, int16 irMaxTq, int32 irTgtPosn)
 {
     union
     {
@@ -517,30 +531,33 @@ void fillMotionParams(uint32 uirProfileVelocity, uint16 uirMaxTq, int32 irTgtPos
 
     union
     {
-        uint16 hl;
+        int16 hl;
         struct
         {
             uint8 l;
             uint8 h;
         } split;
-    } uiLclMaxTq;
+    } iLclMaxTq;
 
     uiLclProfileVelocity.hl = uirProfileVelocity;
-    uiLclMaxTq.hl = uirMaxTq;
+    iLclMaxTq.hl = irMaxTq;
     iLclTgtPosn.hl = irTgtPosn;
 
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_MAX_TQ)) = uiLclMaxTq.split.h;
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_MAX_TQ + 1)) = uiLclMaxTq.split.l;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_MAX_TQ)) = iLclMaxTq.split.l;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_MAX_TQ + 1)) = iLclMaxTq.split.h;
 
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY)) = uiLclProfileVelocity.split.hh;
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY + 1)) = uiLclProfileVelocity.split.hl;
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY + 2)) = uiLclProfileVelocity.split.lh;
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY + 3)) = uiLclProfileVelocity.split.ll;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_TQ)) = iLclMaxTq.split.l;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_TQ + 1)) = iLclMaxTq.split.h; 
 
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_POSN)) = iLclTgtPosn.split.hh;
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_POSN + 1)) = iLclTgtPosn.split.hl;
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_POSN + 2)) = iLclTgtPosn.split.lh;
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_POSN + 3)) = iLclTgtPosn.split.ll;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY)) = uiLclProfileVelocity.split.ll;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY + 1)) = uiLclProfileVelocity.split.lh;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY + 2)) = uiLclProfileVelocity.split.hl;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY + 3)) = uiLclProfileVelocity.split.hh;
+
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_POSN)) = iLclTgtPosn.split.ll;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_POSN + 1)) = iLclTgtPosn.split.lh;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_POSN + 2)) = iLclTgtPosn.split.hl;
+    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_POSN + 3)) = iLclTgtPosn.split.hh;
     iDesiredPositionVal.hl = iLclTgtPosn.hl;
 }
 
@@ -701,7 +718,7 @@ void printStatus(uint16 uirDriveStat)
         break;
     }
     scanCntr++;
-    printf("PAV: %d MdOfOpn:%d status:%x Pde:%d ipa: %d SC: %d ErCd: %X CW: %x MOS: %d\r", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus /*uiTargetReachedFlag*/);
+    printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d Tq: %d\n", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus, iTqActual.hl /*uiTargetReachedFlag*/);
 }
 
 void modifyControlWord(uint16 uirDesiredStat)
@@ -808,11 +825,15 @@ void setSoftwarePositionLimit(uint16 uirSlave, int32 irSW_PosnLimit1, int32 irSW
     ui32Val = 350; // Since 10-30 rpm is allowed. and gear ratio is 10.
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_MOTOR_SPEED, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
-    ui32Val = 2796202; // #Panasonic/Servo/encoder
+    ui32Val = 0x5000000;//2796202; // #Panasonic/Servo/encoder
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_ACCELERATION, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
-    ui32Val = 2796202; // #Panasonic/Servo/encoder
+    ui32Val = 0x5000000; //2796202; // #Panasonic/Servo/encoder
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_DECELERATION, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
+
+    ui16Val = 0x04;
+    uilclRetval += ec_SDOwrite(uirSlave, 0x3015, 0x00, FALSE, sizeof(ui16Val), &ui16Val, EC_TIMEOUTRXM);
+
 
     ui16Val = 50; // 1000
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_TORQUE, 0x00, FALSE, sizeof(ui16Val), &ui16Val, EC_TIMEOUTRXM);
@@ -1066,8 +1087,11 @@ void setFlexibleOutputPDO(uint16 uirSlave)
     u32val = 0x607A0020; // Target Position
     ec_SDOwrite(uirSlave, 0x1600, 5, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
 
+    u32val = 0x60710010; // Target Torque
+    ec_SDOwrite(uirSlave, 0x1600, 6, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
+
     // 1600.0 ==> Inform the number of variables there.
-    u8val = 5; // Since 1600 maps only 7 Variables
+    u8val = 6; // Since 1600 maps only 6 Variables
     ec_SDOwrite(uirSlave, 0x1600, 0, FALSE, sizeof(u8val), &u8val, EC_TIMEOUTRXM);
 
     // Map PDO 1600 to RxPDO Assign
@@ -1122,7 +1146,7 @@ void setFlexibleInputPDO(uint16 uirSlave)
     u32val = 0x606C0020;
     ec_SDOwrite(uirSlave, 0x1A00, 5, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
     // Torque actual value 60770010h
-    u32val = 0x606C0020;
+    u32val = 60770010;
     ec_SDOwrite(uirSlave, 0x1A00, 6, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
 
     // Enter the number of PDO's in each variable
@@ -1502,7 +1526,7 @@ OSAL_THREAD_FUNC_RT RTthread()
         {
             dataRdyForXtraction = 1;
             delMeOpnCntr++;
-            if (delMeOpnCntr > 15000)
+            if (delMeOpnCntr > 5000)
             {
                 delMeOpnExpectedFlag = 1;
                 delMeOpnCntr = 0;
@@ -1610,11 +1634,12 @@ void simpletest(char *ifname)
     uint32_t sync0_cycle_time;
     int ret = 0, l;
     int lclDlyCntr = 0;
+    int32 modifiedPAV = 0;
 
     struct
     {
         uint32 uiProfileVelocity;
-        uint16 uiMaxTq;
+        int16 iMaxTq;
         int32 iTgtPosn;
     } motionParams;
 
@@ -1763,10 +1788,13 @@ void simpletest(char *ifname)
                     {
 
                         printf("\n Operate Motor");
-                        motionParams.iTgtPosn = iPosActualValue.hl - 4700000;
-                        motionParams.uiProfileVelocity = 2000000;
-                        motionParams.uiMaxTq = 2; // 20%
-                        fillMotionParams(motionParams.uiProfileVelocity, motionParams.uiMaxTq, motionParams.iTgtPosn);
+                        modifiedPAV = (iPosActualValue.hl /*& 0x80FFFFFF*/);
+                        printf("\nOriginal PAV: %x\n",iPosActualValue.hl);
+                        printf("Modified PAV: %x\n",modifiedPAV);
+                        motionParams.iTgtPosn = modifiedPAV - 83886080;
+                        motionParams.uiProfileVelocity = 0x8E38C;
+                        motionParams.iMaxTq = 50; // 20%
+                        fillMotionParams(motionParams.uiProfileVelocity, motionParams.iMaxTq, motionParams.iTgtPosn);
                         printf("Current Position: %d\n", iPosActualValue.hl);
                         printf("Desired Position: %d\n", motionParams.iTgtPosn);
 
@@ -1779,7 +1807,7 @@ void simpletest(char *ifname)
                         if(scanCntr > lclDlyCntr){
                             modifyControlWord(CTL_WD_NEW_SET_POINT);
                             printf("\n\n\n\n\n**************SET POINT*************\n");
-                            printf("PAV: %d MdOfOpn:%d status:%x Pde:%d ipa: %d SC: %d ErCd: %X CW: %x MOS: %d\n", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus /*uiTargetReachedFlag*/);
+                            printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d\n", iPosActualValue.hl , ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus /*uiTargetReachedFlag*/);
                             MotorOpnStatus = 3;
                             lclDlyCntr = scanCntr + 200;
                         }
@@ -1908,13 +1936,13 @@ void extractFlexibleInputPDO_data()
     iPosActualValue.split.ll = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE);
     iPosActualValue.split.lh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 1);
     iPosActualValue.split.hl = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 2);
-    iPosActualValue.split.hh = 0;
+    iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
     //iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
 
     ui8ModesOfOpnDisplay = *(ec_slave[0].inputs + INPUT_OFFSET_MODE_OF_OPN_DISP);
 
-    uiTqActual.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE);
-    uiTqActual.split.h = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE + 1);
+    iTqActual.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE);
+    iTqActual.split.h = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE + 1);
 
     updateStatus(uiStatusWd.hl);
     printStatus(uiDriveStatus);
