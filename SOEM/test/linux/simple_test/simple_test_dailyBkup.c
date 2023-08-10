@@ -200,7 +200,7 @@ typedef unsigned int UINT32, *PUINT32;
 #define OUTPUT_OFFSET_PROFILE_VELOCITY 3
 #define OUTPUT_OFFSET_MAX_TQ 7
 #define OUTPUT_OFFSET_TARGET_POSN 9
-#define OUTPUT_OFFSET_TARGET_TQ 13
+
 
 #define NSEC_PER_SEC 1000000000
 #define MSEC_PER_SEC 1000000
@@ -410,6 +410,9 @@ int dataRdyForXtraction = 0;
 int delMeOpnCntr = 0;
 int delMeOpnExpectedFlag = 0;
 int MotorOpnStatus = 0;
+int delMeAlternate = 0;
+
+
 
 void fillMotionParams(uint32 uirProfileVelocity, int16 irMaxTq, int32 irTgtPosn);
 uint16 setLimitingTorqueValue(float frDesiredTorque, float frMotorMaxTorque, uint16 uirGearRatio);
@@ -545,9 +548,6 @@ void fillMotionParams(uint32 uirProfileVelocity, int16 irMaxTq, int32 irTgtPosn)
 
     *(ec_slave[0].outputs + (OUTPUT_OFFSET_MAX_TQ)) = iLclMaxTq.split.l;
     *(ec_slave[0].outputs + (OUTPUT_OFFSET_MAX_TQ + 1)) = iLclMaxTq.split.h;
-
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_TQ)) = iLclMaxTq.split.l;
-    *(ec_slave[0].outputs + (OUTPUT_OFFSET_TARGET_TQ + 1)) = iLclMaxTq.split.h; 
 
     *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY)) = uiLclProfileVelocity.split.ll;
     *(ec_slave[0].outputs + (OUTPUT_OFFSET_PROFILE_VELOCITY + 1)) = uiLclProfileVelocity.split.lh;
@@ -718,7 +718,7 @@ void printStatus(uint16 uirDriveStat)
         break;
     }
     scanCntr++;
-    printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d Tq: %d\n", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus, iTqActual.hl /*uiTargetReachedFlag*/);
+    printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d Tq: %d\r", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus, iTqActual.hl /*uiTargetReachedFlag*/);
 }
 
 void modifyControlWord(uint16 uirDesiredStat)
@@ -803,7 +803,6 @@ void modifyControlWord(uint16 uirDesiredStat)
     default:
         break;
     }
-
     modifyLatchControlWordValue(uiCtlWd.hl);
 }
 
@@ -819,16 +818,16 @@ void setSoftwarePositionLimit(uint16 uirSlave, int32 irSW_PosnLimit1, int32 irSW
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_SW_POSN_LIMIT, 0x01, FALSE, sizeof(irSW_PosnLimit1), &irSW_PosnLimit1, EC_TIMEOUTRXM); // Make this and the following command 0 to disable sw position limit, refer pg. 95 of the Ethercat document
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_SW_POSN_LIMIT, 0x02, FALSE, sizeof(irSW_PosnLimit2), &irSW_PosnLimit2, EC_TIMEOUTRXM);
 
-    ui32Val = 5592406; // 32 rev/min for calculations see #Panasonic/Servo/encoder
+    ui32Val = 55924060; // 32 rev/min for calculations see #Panasonic/Servo/encoder
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_PROFILE_VELOCITY, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
-    ui32Val = 350; // Since 10-30 rpm is allowed. and gear ratio is 10.
+    ui32Val = 3500; // Since 10-30 rpm is allowed. and gear ratio is 10.
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_MOTOR_SPEED, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
-    ui32Val = 0x5000000;//2796202; // #Panasonic/Servo/encoder
+    ui32Val = 0xF000000;//2796202; // #Panasonic/Servo/encoder
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_ACCELERATION, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
-    ui32Val = 0x5000000; //2796202; // #Panasonic/Servo/encoder
+    ui32Val = 0xC000000; //2796202; // #Panasonic/Servo/encoder
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_DECELERATION, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
     ui16Val = 0x04;
@@ -1087,11 +1086,9 @@ void setFlexibleOutputPDO(uint16 uirSlave)
     u32val = 0x607A0020; // Target Position
     ec_SDOwrite(uirSlave, 0x1600, 5, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
 
-    u32val = 0x60710010; // Target Torque
-    ec_SDOwrite(uirSlave, 0x1600, 6, FALSE, sizeof(u32val), &u32val, EC_TIMEOUTRXM);
 
     // 1600.0 ==> Inform the number of variables there.
-    u8val = 6; // Since 1600 maps only 6 Variables
+    u8val = 5; // Since 1600 maps only 6 Variables
     ec_SDOwrite(uirSlave, 0x1600, 0, FALSE, sizeof(u8val), &u8val, EC_TIMEOUTRXM);
 
     // Map PDO 1600 to RxPDO Assign
@@ -1791,9 +1788,17 @@ void simpletest(char *ifname)
                         modifiedPAV = (iPosActualValue.hl /*& 0x80FFFFFF*/);
                         printf("\nOriginal PAV: %x\n",iPosActualValue.hl);
                         printf("Modified PAV: %x\n",modifiedPAV);
-                        motionParams.iTgtPosn = modifiedPAV - 83886080;
-                        motionParams.uiProfileVelocity = 0x8E38C;
-                        motionParams.iMaxTq = 50; // 20%
+                        if(delMeAlternate == 0){
+                            motionParams.iTgtPosn = modifiedPAV + 83886080;
+                            delMeAlternate = 1;
+                        }
+                        else{
+                            motionParams.iTgtPosn = modifiedPAV - 83886080 /*+ 6000*/;
+                            delMeAlternate = 0;
+                        }
+                        motionParams.uiProfileVelocity = 0x8E38C0;
+                        motionParams.iMaxTq = 200; // 20%
+
                         fillMotionParams(motionParams.uiProfileVelocity, motionParams.iMaxTq, motionParams.iTgtPosn);
                         printf("Current Position: %d\n", iPosActualValue.hl);
                         printf("Desired Position: %d\n", motionParams.iTgtPosn);
@@ -1816,11 +1821,14 @@ void simpletest(char *ifname)
                     if(MotorOpnStatus == 3){
                         if (scanCntr > lclDlyCntr)
                         {
-                            if ((uiStatusWd.hl && BIT12) != 0)
+                            if ((uiStatusWd.hl & BIT12) != 0)
                             {
                                 MotorOpnStatus = 4;
                                 modifyControlWord(CTL_WD_RESET_SET_POINT);
                                 printf("\n\n\n\n\n**************RESET POINT*************\n");
+                                printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d\n", iPosActualValue.hl , ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus /*uiTargetReachedFlag*/);
+
+                                lclDlyCntr = scanCntr + 200;
                             }
                             else
                             {
@@ -1829,11 +1837,32 @@ void simpletest(char *ifname)
                         }
                     }
 
-                    if(MotorOpnStatus == 4){
-                        if((uiStatusWd.hl && BIT12) == 0){
-                            MotorOpnStatus = 4;
-                            printf("\n\n\n\n\n**************SET POINT ACK Reset*************");
+                    if (MotorOpnStatus == 4){
+                        if (scanCntr > lclDlyCntr){
+                            if((uiStatusWd.hl & BIT10) == 0){
+                                MotorOpnStatus = 5;
+                                printf("\n\n\n\n\n**************Target Reached RESET*************");
+                                printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d\n", iPosActualValue.hl , ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus /*uiTargetReachedFlag*/);
+                                lclDlyCntr = scanCntr + 200;
+                            }
                         }
+                    }
+
+                    if (MotorOpnStatus == 5)
+                    {
+                        if (scanCntr > lclDlyCntr)
+                        {
+                            if((uiStatusWd.hl & BIT10) != 0) 
+                            {
+                                MotorOpnStatus = 0;
+                                printf("\n\n\n\n\n**************Target Reached*************");
+                                printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d\n", iPosActualValue.hl , ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus /*uiTargetReachedFlag*/);
+                            }
+                        }
+                        // if((uiStatusWd.hl && BIT12) == 0){
+                        //     MotorOpnStatus = 5;
+                        //     printf("\n\n\n\n\n**************SET POINT ACK Reset*************");
+                        // }
                     }
                 }
             }
