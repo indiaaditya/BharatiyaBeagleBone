@@ -107,7 +107,8 @@ typedef unsigned int UINT32, *PUINT32;
 #define CTL_WD_RESET_VE 10
 #define CTL_WD_NEW_SET_POINT 11
 #define CTL_WD_RESET_SET_POINT 12
-#define CTL_WD_PP_MODE 13
+#define CTL_WD_CHANGE_SET_IMMEDIATELY 13
+#define CTL_WD_PP_MODE  14
 
 #define BIT0 1
 #define BIT1 2
@@ -412,7 +413,12 @@ int delMeOpnExpectedFlag = 0;
 int MotorOpnStatus = 0;
 int delMeAlternate = 0;
 
+int32 encoderAcc[10000];
+int encoderAccCntr = 0;
+int encoderOvFlowFlag = 0;
 
+int rotorBlockedFlag = 0;
+int ignoreBlockedRotor = 0;
 
 void fillMotionParams(uint32 uirProfileVelocity, int16 irMaxTq, int32 irTgtPosn);
 uint16 setLimitingTorqueValue(float frDesiredTorque, float frMotorMaxTorque, uint16 uirGearRatio);
@@ -671,6 +677,8 @@ void updateStatus(uint16 uirStatus)
 void printStatus(uint16 uirDriveStat)
 {
     unsigned int uiDesiredStat;
+    int32 lclEncAccVal = 0;
+    int i;
     if (uiErrorFlag == 1)
     {
         printf(" Error Detected  ");
@@ -718,7 +726,33 @@ void printStatus(uint16 uirDriveStat)
         break;
     }
     scanCntr++;
-    printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d Tq: %d\r", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus, iTqActual.hl /*uiTargetReachedFlag*/);
+
+    printf("ACCcntr: %d", encoderOvFlowFlag);
+
+    if (ignoreBlockedRotor == 0)
+    {
+        encoderAcc[encoderAccCntr] = iPosActualValue.hl;
+        encoderAccCntr++;
+        if (encoderAccCntr > 9999)
+        {
+            encoderAccCntr = 0;
+            encoderOvFlowFlag = 1;
+        }
+        if (encoderOvFlowFlag == 1)
+        {
+            if (MotorOpnStatus == 5)
+            {
+                for (i = 1; i < 9998; i++)
+                    lclEncAccVal += encoderAcc[i + 1] - encoderAcc[i];
+
+                if (lclEncAccVal < 0)
+                    lclEncAccVal *= -1;
+                if (lclEncAccVal < 100)
+                    rotorBlockedFlag = 1;
+            }
+        }
+    }
+    printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d Tq: %d ACC VAL: %d RB: %d\r", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus, iTqActual.hl,lclEncAccVal,rotorBlockedFlag);
 }
 
 void modifyControlWord(uint16 uirDesiredStat)
@@ -798,6 +832,10 @@ void modifyControlWord(uint16 uirDesiredStat)
 
     case CTL_WD_RESET_SET_POINT:
         uiCtlWd.hl &= ~BIT4;
+        break;
+
+    case CTL_WD_CHANGE_SET_IMMEDIATELY:
+        uiCtlWd.hl |= BIT5;
         break;
 
     default:
@@ -1791,12 +1829,15 @@ void simpletest(char *ifname)
                         if(delMeAlternate == 0){
                             motionParams.iTgtPosn = modifiedPAV + 83886080;
                             delMeAlternate = 1;
+                            ignoreBlockedRotor = 0;
+                            encoderAccCntr = 0;
                         }
                         else{
                             motionParams.iTgtPosn = modifiedPAV - 83886080 /*+ 6000*/;
                             delMeAlternate = 0;
+                            ignoreBlockedRotor = 1;
                         }
-                        motionParams.uiProfileVelocity = 0x8E38C0;
+                        motionParams.uiProfileVelocity = 0x8E38C0;//0x8E38C0
                         motionParams.iMaxTq = 200; // 20%
 
                         fillMotionParams(motionParams.uiProfileVelocity, motionParams.iMaxTq, motionParams.iTgtPosn);
@@ -1858,11 +1899,18 @@ void simpletest(char *ifname)
                                 printf("\n\n\n\n\n**************Target Reached*************");
                                 printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d\n", iPosActualValue.hl , ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus /*uiTargetReachedFlag*/);
                             }
+
+                            if(rotorBlockedFlag == 1)
+                                MotorOpnStatus = 6;
                         }
-                        // if((uiStatusWd.hl && BIT12) == 0){
-                        //     MotorOpnStatus = 5;
-                        //     printf("\n\n\n\n\n**************SET POINT ACK Reset*************");
-                        // }
+
+                    }
+
+                    if(MotorOpnStatus == 6){
+                        rotorBlockedFlag = 0;
+                        modifyControlWord(CTL_WD_CHANGE_SET_IMMEDIATELY);
+                        printf("\n\n\n\n\n**************Blocked Rotor Reset*************\n");
+                        MotorOpnStatus = 0;
                     }
                 }
             }
