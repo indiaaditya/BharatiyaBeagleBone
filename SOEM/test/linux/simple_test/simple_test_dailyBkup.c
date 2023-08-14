@@ -25,6 +25,19 @@
 
 #include "ethercat.h"
 
+
+//Included headers for serial port
+//Credits: https://blog.mbedded.ninja/programming/operating-systems/linux/linux-serial-ports-using-c-cpp/
+//https://jason19970210.medium.com/raspberry-pi-4-with-multiple-uart-interface-4eac75f74d7c
+
+
+
+#include <fcntl.h> // Contains file controls like O_RDWR
+#include <errno.h> // Error integer and strerror() function
+#include <termios.h> // Contains POSIX terminal control definitions
+#include <unistd.h> // write(), read(), close()
+
+
 // #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
 /*
@@ -211,6 +224,11 @@ typedef unsigned int UINT32, *PUINT32;
 #define TEN_THOU 10000
 #define THOU 1000
 #define HUNDRED 100
+
+#define TRANSMIT_TQ_AND_POSN_BEGIN      1
+#define CHECK_DATA_RECEIVED             2
+#define TAKE_CLOSE_ACTION               3
+#define TAKE_OPEN_ACTION                4
 
 char IOmap[4096];
 OSAL_THREAD_HANDLE thread1, thread2;
@@ -420,6 +438,18 @@ int encoderOvFlowFlag = 0;
 int rotorBlockedFlag = 0;
 int ignoreBlockedRotor = 0;
 
+struct{
+    uint rxByteCntr;
+    uint dataReceivedFlag;
+    int port;
+    int transactStatus;
+    char rxBuffer[3];
+    int scanCntr;
+    int takeAction;
+}serial;
+struct termios tty;
+
+
 void fillMotionParams(uint32 uirProfileVelocity, int16 irMaxTq, int32 irTgtPosn);
 uint16 setLimitingTorqueValue(float frDesiredTorque, float frMotorMaxTorque, uint16 uirGearRatio);
 void updateStatus(uint16 uirStatus);
@@ -458,6 +488,8 @@ int32 calculateFinalDesiredPosn(uint32 ui32rDesRtn);
 void ec_sync(int64 reftime, int64 cycletime, int64 *offsettime);
 void add_timespec(struct timespec *ts, int64 addtime);
 void extractFlexibleInputPDO_data(void);
+int openSerialPort();
+void serialTransact();
 
 // Code taken from https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
 // by user hmjd
@@ -726,8 +758,14 @@ void printStatus(uint16 uirDriveStat)
         break;
     }
     scanCntr++;
+    serial.scanCntr++;
+    if(serial.scanCntr > 250){
+        serial.scanCntr = 0;
+        serial.takeAction = 1;
+    }
 
-    printf("ACCcntr: %d", encoderOvFlowFlag);
+
+    //printf("ACCcntr: %d", encoderOvFlowFlag);
 
     if (ignoreBlockedRotor == 0)
     {
@@ -752,7 +790,7 @@ void printStatus(uint16 uirDriveStat)
             }
         }
     }
-    printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d Tq: %d ACC VAL: %d RB: %d\r", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus, iTqActual.hl,lclEncAccVal,rotorBlockedFlag);
+    //printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d Tq: %d ACC VAL: %d RB: %d\r", iPosActualValue.hl, ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus, iTqActual.hl,lclEncAccVal,rotorBlockedFlag);
 }
 
 void modifyControlWord(uint16 uirDesiredStat)
@@ -856,7 +894,7 @@ void setSoftwarePositionLimit(uint16 uirSlave, int32 irSW_PosnLimit1, int32 irSW
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_SW_POSN_LIMIT, 0x01, FALSE, sizeof(irSW_PosnLimit1), &irSW_PosnLimit1, EC_TIMEOUTRXM); // Make this and the following command 0 to disable sw position limit, refer pg. 95 of the Ethercat document
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_SW_POSN_LIMIT, 0x02, FALSE, sizeof(irSW_PosnLimit2), &irSW_PosnLimit2, EC_TIMEOUTRXM);
 
-    ui32Val = 55924060; // 32 rev/min for calculations see #Panasonic/Servo/encoder
+    ui32Val = 0x355555C;    //55924060 // 32 rev/min for calculations see #Panasonic/Servo/encoder
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_PROFILE_VELOCITY, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
     ui32Val = 3500; // Since 10-30 rpm is allowed. and gear ratio is 10.
@@ -872,8 +910,15 @@ void setSoftwarePositionLimit(uint16 uirSlave, int32 irSW_PosnLimit1, int32 irSW
     uilclRetval += ec_SDOwrite(uirSlave, 0x3015, 0x00, FALSE, sizeof(ui16Val), &ui16Val, EC_TIMEOUTRXM);
 
 
-    ui16Val = 50; // 1000
-    uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_TORQUE, 0x00, FALSE, sizeof(ui16Val), &ui16Val, EC_TIMEOUTRXM);
+    ui32Val = 15000000; //Default value from pg. 19 
+    uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_ACCELERATION, 0x00, FALSE, sizeof(ui16Val), &ui16Val, EC_TIMEOUTRXM);
+
+    ui32Val = 12500000;//Default value from pg. 19 
+    uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_DECELRATION, 0x00, FALSE, sizeof(ui16Val), &ui16Val, EC_TIMEOUTRXM);
+
+
+
+    
 }
 
 void modifyLatchControlWordValue(uint16 uirLatchCtlWd)
@@ -1375,6 +1420,9 @@ void GetDesiredTqAndDegOfRtn()
 
 void SetActualTqAndPosn()
 {
+    char stringToTx[50];
+    char *strResized;
+    int iLclStrSize = 0; 
 
     if (uiDesiredStatus == CMD_STAT_COMPLETED_POSN)
     {
@@ -1386,11 +1434,23 @@ void SetActualTqAndPosn()
         }
     }
 
-    char stringToTx[100];
-    printf("\nActPosn: %d, ACT_TQ:%d, DesStat: %d", uiActualPosn, uiActualTq, uiDesiredStatus);
-    sprintf(stringToTx, "STP,%d,%d,%d", uiActualPosn, uiActualTq, uiDesiredStatus);
-    printf("\n Calling fn SocketSendResponse...");
+    
+    memset(stringToTx, '\0', sizeof(stringToTx));
+    //printf("\nActPosn: %d, ACT_TQ:%d, MOS: %d", iPosActualValue.hl, iDesiredPositionVal.hl, MotorOpnStatus);
+    sprintf(stringToTx, "#STP,%d,%d,%d$", iPosActualValue.hl, iDesiredPositionVal.hl, MotorOpnStatus);
+    iLclStrSize = strlen(stringToTx);
+    //printf("Size of the string: %d", iLclStrSize);
+
+    strResized = malloc((iLclStrSize + 1));
+    memcpy(strResized,stringToTx,(iLclStrSize + 1));
+    
+
+    //printf("\n Calling fn SocketSendResponse...");
     // SocketSendResponse(stringToTx);
+    printf("\n%s",strResized);
+    printf("\nSize:%d",strlen(strResized));
+    write(serial.port,strResized,strlen(strResized));
+    free(strResized);
 }
 
 /*
@@ -1678,6 +1738,14 @@ void simpletest(char *ifname)
         int32 iTgtPosn;
     } motionParams;
 
+
+    //init serial vars
+    serial.rxByteCntr = 0;
+    serial.dataReceivedFlag = 0;
+    serial.transactStatus = TRANSMIT_TQ_AND_POSN_BEGIN;
+    serial.scanCntr = 0;
+    serial.takeAction = 0;
+
     printf("Starting simple test\n");
     resetDesiredTqAndDegOfRtn();
 
@@ -1802,6 +1870,7 @@ void simpletest(char *ifname)
                 while (1)
                 {
 
+
                     if (dataRdyForXtraction == 1)
                     {
                         // printf("\n AA: %d", dataRdyForXtraction );
@@ -1814,7 +1883,7 @@ void simpletest(char *ifname)
                     {
                         if (MotorOpnStatus == 0)
                         {
-                            MotorOpnStatus = 1;
+                            //MotorOpnStatus = 1;
                             delMeOpnExpectedFlag = 0;
                         }
                     }
@@ -1823,22 +1892,23 @@ void simpletest(char *ifname)
                     {
 
                         printf("\n Operate Motor");
-                        modifiedPAV = (iPosActualValue.hl /*& 0x80FFFFFF*/);
+                        modifiedPAV = iPosActualValue.hl ;
                         printf("\nOriginal PAV: %x\n",iPosActualValue.hl);
                         printf("Modified PAV: %x\n",modifiedPAV);
                         if(delMeAlternate == 0){
-                            motionParams.iTgtPosn = modifiedPAV + 83886080;
-                            delMeAlternate = 1;
+                            motionParams.iTgtPosn = modifiedPAV + 83886080 + (83886080/2) ;
+                            motionParams.iMaxTq = 200; // 20%
+                            //delMeAlternate = 1;
                             ignoreBlockedRotor = 0;
                             encoderAccCntr = 0;
                         }
                         else{
                             motionParams.iTgtPosn = modifiedPAV - 83886080 /*+ 6000*/;
-                            delMeAlternate = 0;
+                            motionParams.iMaxTq = 400; // 40%
+                            //delMeAlternate = 0;
                             ignoreBlockedRotor = 1;
                         }
                         motionParams.uiProfileVelocity = 0x8E38C0;//0x8E38C0
-                        motionParams.iMaxTq = 200; // 20%
 
                         fillMotionParams(motionParams.uiProfileVelocity, motionParams.iMaxTq, motionParams.iTgtPosn);
                         printf("Current Position: %d\n", iPosActualValue.hl);
@@ -1895,22 +1965,41 @@ void simpletest(char *ifname)
                         {
                             if((uiStatusWd.hl & BIT10) != 0) 
                             {
-                                MotorOpnStatus = 0;
+                                MotorOpnStatus = 7;
                                 printf("\n\n\n\n\n**************Target Reached*************");
                                 printf("PAV: %x MdOfOpn:%d status:%x Pde:%x ipa: %d SC: %d ErCd: %X CW: %x MOS: %d\n", iPosActualValue.hl , ui8ModesOfOpnDisplay, uiStatusWd.hl, iDesiredPositionVal.hl, uiInterpolationActive, scanCntr, iErrCode.hl, uiCtlWd.hl, MotorOpnStatus /*uiTargetReachedFlag*/);
                             }
-
-                            if(rotorBlockedFlag == 1)
+                            if(rotorBlockedFlag == 1){
                                 MotorOpnStatus = 6;
+                                
+                            }
+                            lclDlyCntr = scanCntr + 2500;
                         }
 
                     }
 
                     if(MotorOpnStatus == 6){
-                        rotorBlockedFlag = 0;
-                        modifyControlWord(CTL_WD_CHANGE_SET_IMMEDIATELY);
-                        printf("\n\n\n\n\n**************Blocked Rotor Reset*************\n");
-                        MotorOpnStatus = 0;
+                        if(scanCntr > lclDlyCntr){
+                            rotorBlockedFlag = 0;
+                            modifyControlWord(CTL_WD_CHANGE_SET_IMMEDIATELY);
+                            printf("\n\n\n\n\n**************Blocked Rotor Reset*************\n");
+                            MotorOpnStatus = 0;
+                        } 
+                    }
+
+                    if (MotorOpnStatus == 7)
+                    {
+                        if (scanCntr > lclDlyCntr)
+                        {
+                            rotorBlockedFlag = 0;
+                            modifyControlWord(CTL_WD_CHANGE_SET_IMMEDIATELY);
+                            MotorOpnStatus = 0;
+                        }
+                    }
+
+                    if(serial.takeAction == 1){
+                        serial.takeAction = 0;
+                        serialTransact();
                     }
                 }
             }
@@ -1929,6 +2018,13 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
         // start cyclic part
+        
+        if(openSerialPort(9600) == 0){
+            printf("\n Opened Serial Port Successfully!!");
+        }
+        else{
+            printf("\n Failed to open the port!!!");
+        }
         simpletest(argv[1]);
     }
     else
@@ -2011,16 +2107,105 @@ void extractFlexibleInputPDO_data()
     
 
     iPosActualValue.split.ll = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE);
-    iPosActualValue.split.lh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 1);
-    iPosActualValue.split.hl = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 2);
-    iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
-    //iPosActualValue.split.hh = *(ec_slave[0].inputs + INPUT_OFFSET_POSN_ACTUAL_VALUE + 3);
+    iPosActualValue.split.lh = *(ec_slave[0].inputs + (INPUT_OFFSET_POSN_ACTUAL_VALUE + 1));
+    iPosActualValue.split.hl = *(ec_slave[0].inputs + (INPUT_OFFSET_POSN_ACTUAL_VALUE + 2));
+    iPosActualValue.split.hh = *(ec_slave[0].inputs + (INPUT_OFFSET_POSN_ACTUAL_VALUE + 3));
 
     ui8ModesOfOpnDisplay = *(ec_slave[0].inputs + INPUT_OFFSET_MODE_OF_OPN_DISP);
 
     iTqActual.split.l = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE);
-    iTqActual.split.h = *(ec_slave[0].inputs + INPUT_OFFSET_TQ_ACTUAL_VALUE + 1);
+    iTqActual.split.h = *(ec_slave[0].inputs + (INPUT_OFFSET_TQ_ACTUAL_VALUE + 1));
 
     updateStatus(uiStatusWd.hl);
     printStatus(uiDriveStatus);
+}
+
+
+
+
+//Serial port related activity
+int openSerialPort(){
+    int retVar = 0;
+    serial.dataReceivedFlag = 0;
+    serial.rxByteCntr = 0;
+    serial.port = open("/dev/ttyAMA0", O_RDWR);
+    if (serial.port < 0) 
+        printf("Error %i from open: %s\n", errno, strerror(errno));
+    else{    
+        if(tcgetattr(serial.port, &tty) != 0){
+            printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+        }
+        else{
+            tty.c_cflag &= ~PARENB; // Clear parity bit
+            tty.c_cflag &= ~CSTOPB; // Clear stop field, only one stop bit used in communication 
+            tty.c_cflag &= ~CSIZE; // Clear all the size bits
+            tty.c_cflag |= CS8; // 8 bits per byte
+            tty.c_cflag &= ~CRTSCTS; // Disable RTS/CTS hardware flow control
+            tty.c_cflag |= CREAD | CLOCAL; // Turn on READ & ignore ctrl lines (CLOCAL = 1)
+            tty.c_lflag &= ~ICANON;
+            tty.c_lflag &= ~ECHO; // Disable echo
+            tty.c_lflag &= ~ISIG; // Disable interpretation of INTR, QUIT and SUSP
+            tty.c_iflag &= ~(IXON | IXOFF | IXANY); // Turn off s/w flow ctrl
+            tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL); // Disable any special handling of received
+            tty.c_oflag &= ~OPOST; // Prevent special interpretation of output bytes (e.g. newline chars)
+            tty.c_oflag &= ~ONLCR; // Prevent conversion of newline to carriage return/line feed
+            tty.c_cc[VTIME] = 0;    // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
+            tty.c_cc[VMIN] = 0;
+            cfsetispeed(&tty, B9600);
+            cfsetospeed(&tty, B9600);
+
+            // Save tty settings, also checking for error
+            if (tcsetattr(serial.port, TCSANOW, &tty) != 0)
+            {
+                printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+                return 1;
+            }
+        }
+    }
+    return retVar;
+}
+
+
+
+void serialTransact(){
+    char lclCmdClose[] = "CCC";
+    char lclCmdOpen[] = "OOO";
+
+    switch(serial.transactStatus){
+        case TRANSMIT_TQ_AND_POSN_BEGIN:
+            SetActualTqAndPosn();
+            serial.transactStatus = CHECK_DATA_RECEIVED; 
+        break;
+
+        case CHECK_DATA_RECEIVED:
+            serial.rxByteCntr = read(serial.port,&serial.rxBuffer,sizeof(serial.rxBuffer));
+            if(serial.rxByteCntr == 3){
+                if(strcmp(lclCmdClose,serial.rxBuffer) == 0)
+                    serial.transactStatus = TAKE_CLOSE_ACTION;
+                if(strcmp(lclCmdOpen,serial.rxBuffer) == 0)
+                    serial.transactStatus = TAKE_OPEN_ACTION;
+            }
+            else{
+                serial.transactStatus = TRANSMIT_TQ_AND_POSN_BEGIN;
+            }
+        break;
+
+        case TAKE_CLOSE_ACTION:
+            MotorOpnStatus = 1;
+            delMeAlternate = 0;	//Close
+            serial.transactStatus = TRANSMIT_TQ_AND_POSN_BEGIN;
+
+        break;
+
+        case TAKE_OPEN_ACTION:
+            MotorOpnStatus = 1;
+            delMeAlternate = 1;	//Open
+            serial.transactStatus = TRANSMIT_TQ_AND_POSN_BEGIN;
+
+        break;
+
+        default:
+        break;
+    }
+
 }
