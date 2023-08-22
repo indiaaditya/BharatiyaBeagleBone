@@ -181,6 +181,14 @@ typedef unsigned int UINT32, *PUINT32;
 #define REG_PROF_POSN_MODE_MAX_DECELERATION 0X60C6
 #define REG_PROF_POSN_MODE_MAX_TORQUE 0x6072
 
+#define REG_TORQUE_SETUP_FOR_EMERGENCY_STOP 0x3511
+#define REG_OVER_LOAD_LEVEL_SETUP    0x3512    
+#define REG_OVER_SPEED_LEVEL_SETUP  0x3513
+#define REG_MOTOR_WORKING_RANGE_SETUP   0x3514
+
+
+#define ACCELERATION_VALUE  5000000
+
 #define DRV_OPMODE_CURRENT_MODE 0
 #define DRV_OPMODE_VELOCITY_MODE 1
 #define DRV_OPMODE_POSITION_MODE 2
@@ -224,6 +232,10 @@ typedef unsigned int UINT32, *PUINT32;
 #define TEN_THOU 10000
 #define THOU 1000
 #define HUNDRED 100
+
+
+#define ENCODER_CNT_PER_REV_POST_GEARBOX    83886080
+#define ENCODER_CNT_PER_DEGREE_POST_GEARBOX              (83886080/360)
 
 #define TRANSMIT_TQ_AND_POSN_BEGIN      1
 #define CHECK_DATA_RECEIVED             2
@@ -468,7 +480,6 @@ void setLimitValues(uint16 uirSlave);
 void setDCModeSetup(uint16 uirSlave);
 void setFlexibleOutputPDO(uint16 uirSlave);
 void setFlexibleInputPDO(uint16 uirSlave);
-unsigned char checkInterPolationDone();
 void drv_SetOperationMode(uint16 slave, int32 irSelectedMode);
 void resetDesiredTqAndDegOfRtn();
 void GetDesiredTqAndDegOfRtn(void);
@@ -480,7 +491,7 @@ UINT32 ValidateInteger(UINT32 *uirIntegerToValidate, UINT32 uirIntegerMinVal, UI
 UINT32 ValidateFloat(float *frFloatToValidate, float frFloatMinVal, float frFloatMaxVal, float frFillValIfInvalid);
 void SetActualTqAndPosn();
 // void SetCommandStatus(UINT32 uirCmdStatus);
-void ConvertDegreeOfRotationToCount(uint32 uirRPM, uint32 uirScanIntervalInMsec, uint32 uirDegreesToRotate);
+UINT32 ConvertRPM_to_profileVelocity(uint32 uirRPM);
 void socketServerAction();
 char **str_split(char *a_str, const char a_delim);
 void SocketSendResponse(char *);
@@ -580,7 +591,8 @@ void fillMotionParams(uint32 uirProfileVelocity, int16 irMaxTq, int32 irTgtPosn)
         } split;
     } iLclMaxTq;
 
-    uiLclProfileVelocity.hl = uirProfileVelocity;
+    uiLclProfileVelocity.hl = ConvertRPM_to_profileVelocity(uirProfileVelocity);
+
     iLclMaxTq.hl = irMaxTq;
     iLclTgtPosn.hl = irTgtPosn;
 
@@ -894,13 +906,13 @@ void setSoftwarePositionLimit(uint16 uirSlave, int32 irSW_PosnLimit1, int32 irSW
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_SW_POSN_LIMIT, 0x01, FALSE, sizeof(irSW_PosnLimit1), &irSW_PosnLimit1, EC_TIMEOUTRXM); // Make this and the following command 0 to disable sw position limit, refer pg. 95 of the Ethercat document
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_SW_POSN_LIMIT, 0x02, FALSE, sizeof(irSW_PosnLimit2), &irSW_PosnLimit2, EC_TIMEOUTRXM);
 
-    ui32Val = 0x355555C;    //55924060 // 32 rev/min for calculations see #Panasonic/Servo/encoder
+    ui32Val = 0xFFFFFFFF;    //55924060 // 32 rev/min for calculations see #Panasonic/Servo/encoder
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_PROFILE_VELOCITY, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
-    ui32Val = 3500; // Since 10-30 rpm is allowed. and gear ratio is 10.
+    ui32Val = 0xFFFFFFFF; // Since 10-30 rpm is allowed. and gear ratio is 10.
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_MOTOR_SPEED, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
-    ui32Val = 0xF000000;//2796202; // #Panasonic/Servo/encoder
+    ui32Val = ACCELERATION_VALUE;//2796202; // #Panasonic/Servo/encoder
     uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_MAX_ACCELERATION, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
     ui32Val = 0xC000000; //2796202; // #Panasonic/Servo/encoder
@@ -910,11 +922,11 @@ void setSoftwarePositionLimit(uint16 uirSlave, int32 irSW_PosnLimit1, int32 irSW
     uilclRetval += ec_SDOwrite(uirSlave, 0x3015, 0x00, FALSE, sizeof(ui16Val), &ui16Val, EC_TIMEOUTRXM);
 
 
-    ui32Val = 15000000; //Default value from pg. 19 
-    uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_ACCELERATION, 0x00, FALSE, sizeof(ui16Val), &ui16Val, EC_TIMEOUTRXM);
+    ui32Val = ACCELERATION_VALUE; //Default value from pg. 19 
+    uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_ACCELERATION, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
     ui32Val = 12500000;//Default value from pg. 19 
-    uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_DECELRATION, 0x00, FALSE, sizeof(ui16Val), &ui16Val, EC_TIMEOUTRXM);
+    uilclRetval += ec_SDOwrite(uirSlave, REG_PROF_POSN_MODE_DECELRATION, 0x00, FALSE, sizeof(ui32Val), &ui32Val, EC_TIMEOUTRXM);
 
 
 
@@ -1104,6 +1116,20 @@ void setInputPDO(uint16 slave, uint16 uirInputPDO)
     retval += ec_SDOwrite(slave, 0x1c13, 0x00, FALSE, sizeof(u8val), &u8val, EC_TIMEOUTRXM);
 }
 
+void setLimitValues(uint16 uirSlave){
+    int retval = 0;
+    int16 i16val;
+    i16val = 100;
+    retval += ec_SDOwrite(uirSlave, REG_TORQUE_SETUP_FOR_EMERGENCY_STOP, 0x00, FALSE,sizeof(i16val),&i16val,EC_TIMEOUTRXM);
+    i16val = 115;
+    retval += ec_SDOwrite(uirSlave, REG_OVER_LOAD_LEVEL_SETUP, 0x00, FALSE,sizeof(i16val),&i16val,EC_TIMEOUTRXM);
+    i16val = 350;
+    retval += ec_SDOwrite(uirSlave, REG_OVER_SPEED_LEVEL_SETUP, 0x00, FALSE,sizeof(i16val),&i16val,EC_TIMEOUTRXM);
+    i16val = 0;
+    retval += ec_SDOwrite(uirSlave, REG_MOTOR_WORKING_RANGE_SETUP, 0x00, FALSE,sizeof(i16val),&i16val,EC_TIMEOUTRXM);
+
+}
+
 // Panasonic Specific
 void setDCModeSetup(uint16 uirSlave)
 {
@@ -1243,13 +1269,7 @@ void setFlexibleInputPDO(uint16 uirSlave)
     ec_SDOwrite(uirSlave, 0x1C13, 0x01, FALSE, sizeof(u16val), &u16val, EC_TIMEOUTRXM);
 }
 
-unsigned char checkInterPolationDone()
-{
-    unsigned char ucRetVar;
-    ucRetVar = 0;
 
-    return ucRetVar;
-}
 
 void drv_SetOperationMode(uint16 slave, int32 irSelectedMode)
 {
@@ -1464,38 +1484,10 @@ void SetCommandStatus(UINT32 uirCmdStatus)
 }
 */
 
-void ConvertDegreeOfRotationToCount(uint32 uirRPM, uint32 uirScanIntervalInMsec, uint32 uirDegreesToRotate)
+UINT32 ConvertRPM_to_profileVelocity(uint32 uirRPM)
 {
-    float fLclVar;
-    float fDegreesPerScanInterval = 0;
-    // Refer Sheet 2 of SOEM Calculations Sheet 2 in SOEM-Calculations folder
-    // Step 1: Convert RPM to RPS
-    fLclVar = (float)uirRPM / 60;
-    printf("\n Step 1: %f", fLclVar);
-    // Step 2: Convert RPS to Degrees in One Second
-    fLclVar = fLclVar * 360;
-    printf("\n Step 2: %f", fLclVar);
-
-    // Step 3: Convert Degrees in One Second to Degrees in scan Interval
-    fLclVar = fLclVar * ((float)uirScanIntervalInMsec / 1000);
-    fDegreesPerScanInterval = fLclVar;
-    printf("\n Step 3: %f", fLclVar);
-
-    // Step 4: Count to be traversed in 1 Scan interval
-    fLclVar = (float)(((fLclVar * pow(2, ENCODER_RESOLUTION_IN_BITS) * GEAR_RATIO)) / 360);
-    uiRotationOffset = (uint32)fLclVar;
-    printf("\n Step 4: %f", fLclVar);
-
-    // Step 5: Steps required for completing the motion
-    ui32StepsExecuted = 0;
-    ui32StepsProgramed = (int32)((float)uirDegreesToRotate / fDegreesPerScanInterval);
-    ui32StepsProgramed = ui32StepsProgramed /* + (int)(0 * (double)ui32StepsProgramed)*/;
-    // Debug: Reducing for debug purposes
-    // ui32StepsProgramed *= 2;
-    // uiRotationOffset = uiRotationOffset / 1000;
-
-    printf("\n********************** Steps Programed: %d", ui32StepsProgramed);
-    printf("\n**************** Rotation Offset: %d", uiRotationOffset);
+    //Convert desired RPM to command/sec value for register 0x6081
+    return(uirRPM * 60 * ENCODER_CNT_PER_DEGREE_POST_GEARBOX);
 }
 
 UINT32 ValidateInteger(UINT32 *uirIntegerToValidate, UINT32 uirIntegerMinVal, UINT32 uirIntegerMaxVal, UINT32 uirFillValIfInvalid)
@@ -1570,6 +1562,7 @@ int PanasonicSetup(uint16 slave)
     retval = 0;
     // u8val = 0;
     setDCModeSetup(slave);
+    setLimitValues(slave);
     setSoftwarePositionLimit(slave, 0, 0);
     setFlexibleOutputPDO(slave);
     setFlexibleInputPDO(slave);
@@ -1897,7 +1890,7 @@ void simpletest(char *ifname)
                         printf("Modified PAV: %x\n",modifiedPAV);
                         if(delMeAlternate == 0){
                             motionParams.iTgtPosn = modifiedPAV + 83886080 + (83886080/2) ;
-                            motionParams.iMaxTq = 200; // 20%
+                            motionParams.iMaxTq = 180; // 20%
                             //delMeAlternate = 1;
                             ignoreBlockedRotor = 0;
                             encoderAccCntr = 0;
@@ -1908,9 +1901,10 @@ void simpletest(char *ifname)
                             //delMeAlternate = 0;
                             ignoreBlockedRotor = 1;
                         }
-                        motionParams.uiProfileVelocity = 0x8E38C0;//0x8E38C0
+                        //motionParams.uiProfileVelocity = (0x8E38C0);//0x8E38C0
+                        motionParams.uiProfileVelocity = 0x1AAAA40; // 10 rpm
 
-                        fillMotionParams(motionParams.uiProfileVelocity, motionParams.iMaxTq, motionParams.iTgtPosn);
+                        fillMotionParams(30, motionParams.iMaxTq, motionParams.iTgtPosn);
                         printf("Current Position: %d\n", iPosActualValue.hl);
                         printf("Desired Position: %d\n", motionParams.iTgtPosn);
 
