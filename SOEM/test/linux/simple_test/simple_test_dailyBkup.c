@@ -2171,9 +2171,13 @@ void serialTransact(){
             serial.transactStatus = CHECK_DATA_RECEIVED; 
         break;
 
+
+        //Command will be in this format:
+        // #CCC,1000,0525$ ==> Close Command ==> Close 1000 deg. with 5.25 N-m torque
+        // #OOO,0360,1000$ ==> Open Command  ==> Opern 360 deg. with 10 N-m torque
         case CHECK_DATA_RECEIVED:
             serial.rxByteCntr = read(serial.port,&serial.rxBuffer,sizeof(serial.rxBuffer));
-            if(serial.rxByteCntr == 3){
+            if(serial.rxByteCntr == 8){
                 if(strcmp(lclCmdClose,serial.rxBuffer) == 0)
                     serial.transactStatus = TAKE_CLOSE_ACTION;
                 if(strcmp(lclCmdOpen,serial.rxBuffer) == 0)
