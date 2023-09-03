@@ -201,8 +201,8 @@ typedef unsigned int UINT32, *PUINT32;
 // #define PPMNEW_RELATIVE_MODE								*(ec_slave[0].outputs + 1) |= (BIT6)
 // #define PPMNEW_ABSOLUTE_MODE								*(ec_slave[0].outputs + 1) &= ~(BIT6)
 
-#define CW 1  // Full Marks for being right handed
-#define ACW 0 // Zero Marks for being left handed.... Indian Preconcieved notions become predefined definitions!!
+#define CW 1  
+#define ACW 2 
 
 #define MOTION_TIMEOUT_VAL 90000
 #define BLOCK_ROTOR_DECLARE_CNT 1000 // This constant will be used for the number of samples for which the rotor consequtively has not achieved its desired position!
@@ -501,6 +501,7 @@ void add_timespec(struct timespec *ts, int64 addtime);
 void extractFlexibleInputPDO_data(void);
 int openSerialPort();
 void serialTransact();
+int extractSerialCmdData(char strDataFromMaster[]);
 
 // Code taken from https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
 // by user hmjd
@@ -2005,6 +2006,10 @@ void simpletest(char *ifname)
 
 int main(int argc, char *argv[])
 {
+
+    char lclString[] = "#OOO,0360,15,1000$";
+    int lclRet;
+
     printf("Endurance 2\n");
     printf("SOEM (Simple Open EtherCAT Master)\nSimple test\n");
     printf("argc:%d \n", argc);
@@ -2012,6 +2017,10 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
         // start cyclic part
+        
+        //temp debug
+        lclRet = extractSerialCmdData(lclString);
+        printf("\n Return Val: %d", lclRet);
         
         if(openSerialPort(9600) == 0){
             printf("\n Opened Serial Port Successfully!!");
@@ -2177,7 +2186,9 @@ void serialTransact(){
         // #OOO,0360,1000$ ==> Open Command  ==> Opern 360 deg. with 10 N-m torque
         case CHECK_DATA_RECEIVED:
             serial.rxByteCntr = read(serial.port,&serial.rxBuffer,sizeof(serial.rxBuffer));
-            if(serial.rxByteCntr == 8){
+            if(serial.rxByteCntr == 15){
+
+
                 if(strcmp(lclCmdClose,serial.rxBuffer) == 0)
                     serial.transactStatus = TAKE_CLOSE_ACTION;
                 if(strcmp(lclCmdOpen,serial.rxBuffer) == 0)
@@ -2206,4 +2217,58 @@ void serialTransact(){
         break;
     }
 
+}
+ // 0123456789
+ // #CCC,1000,10,0525$ ==> Close Command ==> Close 1000 deg. @10 RPM with 5.25 N-m torque
+ // #OOO,0360,15,1000$ ==> Open Command  ==> Opern 360 deg. @15 RPM with 10 N-m torque
+struct{
+    int direction;
+    int degreeOfRtn;
+    int rpm;
+    float torque;
+}SerialCommand;
+
+
+int extractSerialCmdData(char strDataFromMaster[]){
+    char str4Digit[5];
+
+    if(strDataFromMaster[0] != '#')    
+        return -1;        
+    if(strDataFromMaster[17] != '$')
+        return -2;
+
+    SerialCommand.direction = 0;    
+    if((strDataFromMaster[1] == strDataFromMaster[2]) && (strDataFromMaster[2] == strDataFromMaster[3]) && strDataFromMaster[1] == strDataFromMaster[3]){
+        if(strDataFromMaster[1] == 'C')
+            SerialCommand.direction = ACW;
+        if(strDataFromMaster[1] == 'O')
+            SerialCommand.direction = CW;
+        if(SerialCommand.direction == 0){
+            printf("%c", strDataFromMaster[1]);
+            return -3;    
+        }
+    }
+    if((strDataFromMaster[4] != ',') || (strDataFromMaster[9] != ',') || (strDataFromMaster[12] != ',')){
+        return -4;
+    }
+
+    //Fill up degrees
+    memcpy(str4Digit,&strDataFromMaster[5],4);
+    //printf("Extracted Degree of Rotation: %s",str4Digit);
+    SerialCommand.degreeOfRtn = atoi(str4Digit);
+    printf("\nRotation: %d",SerialCommand.degreeOfRtn);
+
+    memset(str4Digit,0,5);
+    memcpy(str4Digit,&strDataFromMaster[10],2);
+    //printf("String RPM: %s",str4Digit);
+    SerialCommand.rpm = atoi(str4Digit);
+    printf("\nrpm:%d",SerialCommand.rpm);
+
+    memset(str4Digit,0,5);
+    memcpy(str4Digit,&strDataFromMaster[13],4);
+    //printf("String tq: %s",str4Digit);
+    SerialCommand.torque = (float)atoi(str4Digit)/100;
+    printf("\ntorque:%2.2f",SerialCommand.torque);
+
+    return 1;    
 }
